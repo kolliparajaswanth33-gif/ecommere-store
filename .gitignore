@@ -1,0 +1,13 @@
+# Python and Django temporary files
+__pycache__/
+*.py[cod]
+
+# Local database and secrets
+db.sqlite3
+.env
+
+# Editor settings
+.vscode/
+
+# Collected static files
+staticfiles/

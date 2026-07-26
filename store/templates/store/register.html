@@ -1,0 +1,29 @@
+{% extends 'store/base.html' %}
+
+{% block title %}Register | Kubara Kirana Shop{% endblock %}
+
+{% block content %}
+<main class="auth-page">
+    <section class="auth-card">
+        <p class="eyebrow">CREATE ACCOUNT</p>
+        <h1>Join Kubara Kirana Shop</h1>
+        <p class="auth-intro">Create an account to place and track your orders.</p>
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            {% for field in form %}
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% for error in field.errors %}
+                    <small class="form-error">{{ error }}</small>
+                {% endfor %}
+            {% endfor %}
+
+            <button class="primary-button" type="submit">Create account</button>
+        </form>
+        <p class="auth-switch">Already have an account? <a href="{% url 'store:login' %}">Login</a></p>
+    </section>
+</main>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends 'store/base.html' %}
+
+{% block title %}Billing | Kubara Kirana Shop{% endblock %}
+
+{% block content %}
+<main class="checkout-page">
+    <div class="checkout-heading">
+        <p class="eyebrow">SECURE CHECKOUT</p>
+        <h1>Billing details</h1>
+        <p>Enter your delivery details to place the order.</p>
+    </div>
+
+    <section class="checkout-layout">
+        <form method="post" class="billing-form">
+            {% csrf_token %}
+            <label for="full_name">Full name</label>
+            <input id="full_name" name="full_name" value="{{ user.get_full_name|default:user.username }}" required>
+
+            <label for="email">Email address</label>
+            <input id="email" type="email" name="email" value="{{ user.email }}" required>
+
+            <label for="phone">Phone number</label>
+            <input id="phone" type="tel" name="phone" pattern="[0-9]{10}" placeholder="10-digit mobile number" required>
+
+            <label for="address">Delivery address</label>
+            <textarea id="address" name="address" rows="4" required></textarea>
+
+            <div class="form-row">
+                <div>
+                    <label for="city">City</label>
+                    <input id="city" name="city" required>
+                </div>
+                <div>
+                    <label for="postal_code">PIN code</label>
+                    <input id="postal_code" name="postal_code" pattern="[0-9]{6}" placeholder="6 digits" required>
+                </div>
+            </div>
+
+            <button class="primary-button" type="submit">Place order — ₹{{ total }}</button>
+        </form>
+
+        <aside class="order-summary">
+            <h2>Your items</h2>
+            {% for item in items %}
+                <p><span>{{ item.product.name }} × {{ item.quantity }}</span><strong>₹{{ item.subtotal }}</strong></p>
+            {% endfor %}
+            <div class="summary-total"><span>Total</span><strong>₹{{ total }}</strong></div>
+        </aside>
+    </section>
+</main>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Kubara Kirana Shop{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'store/css/style.css' %}">
+</head>
+<body>
+    <header class="site-header">
+        <a class="brand" href="{% url 'store:home' %}">Kubara Kirana Shop</a>
+        <nav class="navigation">
+            <a href="{% url 'store:home' %}">Home</a>
+            <a href="#products">Products</a>
+            <a href="{% url 'store:cart' %}">Cart <span class="cart-count">{{ cart_count }}</span></a>
+            {% if user.is_authenticated %}
+                <span class="user-name">Hi, {{ user.username }}</span>
+                <form class="logout-form" method="post" action="{% url 'store:logout' %}">
+                    {% csrf_token %}
+                    <button type="submit">Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url 'store:login' %}">Login</a>
+                <a class="nav-register" href="{% url 'store:register' %}">Register</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    {% block content %}{% endblock %}
+
+    <footer class="site-footer">
+        <p>© 2026 Kubara Kirana Shop. Built by Kollipara Jaswanth.</p>
+    </footer>
+</body>
+</html>

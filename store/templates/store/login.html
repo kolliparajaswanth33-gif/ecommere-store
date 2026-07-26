@@ -1,0 +1,27 @@
+{% extends 'store/base.html' %}
+
+{% block title %}Login | Kubara Kirana Shop{% endblock %}
+
+{% block content %}
+<main class="auth-page">
+    <section class="auth-card">
+        <p class="eyebrow">WELCOME BACK</p>
+        <h1>Login to your account</h1>
+        <p class="auth-intro">Login to manage your orders and make shopping faster.</p>
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <label for="id_username">Username</label>
+            <input type="text" name="username" id="id_username" required autofocus>
+
+            <label for="id_password">Password</label>
+            <input type="password" name="password" id="id_password" required>
+
+            <button class="primary-button" type="submit">Login</button>
+        </form>
+        <p class="auth-switch">New customer? <a href="{% url 'store:register' %}">Create an account</a></p>
+    </section>
+</main>
+{% endblock %}

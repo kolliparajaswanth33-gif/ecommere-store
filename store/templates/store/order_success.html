@@ -1,0 +1,16 @@
+{% extends 'store/base.html' %}
+
+{% block title %}Order Confirmed | Kubara Kirana Shop{% endblock %}
+
+{% block content %}
+<main class="success-page">
+    <section class="success-card">
+        <p class="success-icon">✓</p>
+        <p class="eyebrow">ORDER CONFIRMED</p>
+        <h1>Thank you, {{ order.full_name }}!</h1>
+        <p>Your order #{{ order.id }} has been placed successfully.</p>
+        <p><strong>Total paid: ₹{{ order.total_amount }}</strong></p>
+        <a class="primary-button" href="{% url 'store:home' %}">Continue shopping</a>
+    </section>
+</main>
+{% endblock %}

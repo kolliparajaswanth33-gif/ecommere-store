@@ -1,0 +1,41 @@
+{% extends 'store/base.html' %}
+
+{% block title %}Cart | Kubara Kirana Shop{% endblock %}
+
+{% block content %}
+<main class="cart-page">
+    <p class="eyebrow">YOUR SHOPPING CART</p>
+    <h1>Cart</h1>
+
+    {% if items %}
+        <section class="cart-layout">
+            <div class="cart-list">
+                {% for item in items %}
+                    <article class="cart-item">
+                        <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}">
+                        <div>
+                            <h2>{{ item.product.name }}</h2>
+                            <p>₹{{ item.product.price }} each</p>
+                        </div>
+                        <form method="post" action="{% url 'store:update_cart' item.product.id %}" class="quantity-form">
+                            {% csrf_token %}
+                            <label for="quantity-{{ item.product.id }}">Quantity</label>
+                            <input id="quantity-{{ item.product.id }}" type="number" name="quantity" value="{{ item.quantity }}" min="0" max="{{ item.product.stock }}">
+                            <button type="submit">Update</button>
+                        </form>
+                        <strong>₹{{ item.subtotal }}</strong>
+                    </article>
+                {% endfor %}
+            </div>
+
+            <aside class="order-summary">
+                <h2>Order summary</h2>
+                <div><span>Total</span><strong>₹{{ total }}</strong></div>
+                <a class="primary-button" href="{% url 'store:checkout' %}">Proceed to billing</a>
+            </aside>
+        </section>
+    {% else %}
+        <p class="empty-state">Your cart is empty. Add some groceries to begin.</p>
+    {% endif %}
+</main>
+{% endblock %}

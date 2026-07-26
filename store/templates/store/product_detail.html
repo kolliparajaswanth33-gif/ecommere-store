@@ -1,0 +1,42 @@
+{% extends 'store/base.html' %}
+
+{% block title %}{{ product.name }} | Kubara Kirana Shop{% endblock %}
+
+{% block content %}
+<main class="product-detail-page">
+    <a class="back-link" href="{% url 'store:home' %}#products">← Back to products</a>
+
+    <section class="product-detail">
+        <div class="detail-image">
+            {% if product.image_url %}
+                <img src="{{ product.image_url }}" alt="{{ product.name }}">
+            {% else %}
+                <div class="image-placeholder">No image available</div>
+            {% endif %}
+        </div>
+
+        <div class="detail-content">
+            <p class="eyebrow">KIRANA ESSENTIAL</p>
+            <h1>{{ product.name }}</h1>
+            <p class="detail-price">₹{{ product.price }}</p>
+            <p class="detail-description">{{ product.description }}</p>
+
+            {% if product.stock > 0 %}
+                <p class="availability in-stock">✓ {{ product.stock }} available in stock</p>
+                <div class="purchase-actions">
+                    <form method="post" action="{% url 'store:add_to_cart' product.id %}">
+                        {% csrf_token %}
+                        <button class="secondary-button" type="submit">Add to cart</button>
+                    </form>
+                    <form method="post" action="{% url 'store:buy_now' product.id %}">
+                        {% csrf_token %}
+                        <button class="primary-button buy-now" type="submit">Buy now</button>
+                    </form>
+                </div>
+            {% else %}
+                <p class="availability out-of-stock">This product is currently out of stock.</p>
+            {% endif %}
+        </div>
+    </section>
+</main>
+{% endblock %}
