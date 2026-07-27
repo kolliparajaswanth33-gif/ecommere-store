@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-3h%z8t&5odqal!#(zpmxoi!*na@u^t5_qiarv%q9byigp16t04
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -43,6 +43,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhitenoiseMiddleware',    
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -131,3 +132,4 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('KIRANA_GMAIL_ADDRESS', '')
 EMAIL_HOST_PASSWORD = os.environ.get('KIRANA_GMAIL_APP_PASSWORD', '')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+STATIC_ROOT = BASE_DIR / 'staticfiles'
