@@ -3,7 +3,7 @@ __pycache__/
 *.py[cod]
 
 # Local database and secrets
-db.sqlite3
+#db.sqlite3
 .env
 
 # Editor settings
