@@ -11,6 +11,7 @@ from .forms import RegisterForm
 from .models import Order, OrderItem, Product
 
 
+@login_required(login_url='store:login')
 def home(request):
     products = Product.objects.all()
     return render(request, 'store/home.html', {'products': products})

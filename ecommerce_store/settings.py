@@ -133,3 +133,7 @@ EMAIL_HOST_USER = os.environ.get('KIRANA_GMAIL_ADDRESS', '')
 EMAIL_HOST_PASSWORD = os.environ.get('KIRANA_GMAIL_APP_PASSWORD', '')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+LOGIN_URL = 'store:login'
+LOGIN_REDIRECT_URL = 'store:home'
+LOGOUT_REDIRECT_URL = 'store:login'
