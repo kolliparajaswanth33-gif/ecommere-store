@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-
+from django.core.exceptions import ValidationError
 
 class Product(models.Model):
     name = models.CharField(max_length=200)
@@ -12,9 +12,9 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def clean(self):
-     if bool(self.image) == bool(self.image_url):
-        raise ValidationError(
-            "Please choose either Upload Image or Image URL."
+        if bool(self.image) == bool(self.image_url):
+           raise ValidationError(
+                "Please choose either Upload Image or Image URL."
         )
 
     class Meta:
@@ -56,5 +56,31 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f'{self.quantity} × {self.product_name}'
+
+class Address(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="addresses"
+    )
+
+    full_name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=15)
+
+    house_no = models.CharField(max_length=100)
+    street = models.CharField(max_length=200)
+    landmark = models.CharField(max_length=200, blank=True)
+
+    city = models.CharField(max_length=100)
+    district = models.CharField(max_length=100)
+    state = models.CharField(max_length=100)
+    pincode = models.CharField(max_length=6)
+
+    is_default = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.full_name} - {self.city}"
 
 # Create your models here.

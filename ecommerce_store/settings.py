@@ -134,6 +134,10 @@ EMAIL_HOST_PASSWORD = os.environ.get('KIRANA_GMAIL_APP_PASSWORD', '')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# Media Files (Uploaded Images)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 LOGIN_URL = 'store:login'
 LOGIN_REDIRECT_URL = 'store:home'
 LOGOUT_REDIRECT_URL = 'store:login'

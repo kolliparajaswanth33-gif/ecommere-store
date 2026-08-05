@@ -1,7 +1,6 @@
 from django.contrib import admin
 
-from .models import Order, OrderItem, Product
-
+from .models import Order, OrderItem, Product, Address
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
@@ -22,4 +21,28 @@ class OrderAdmin(admin.ModelAdmin):
     readonly_fields = ('total_amount', 'created_at')
     inlines = [OrderItemInline]
 
+@admin.register(Address)
+class AddressAdmin(admin.ModelAdmin):
+    list_display = (
+        "full_name",
+        "user",
+        "phone",
+        "city",
+        "state",
+        "pincode",
+        "is_default",
+    )
+
+    list_filter = (
+        "state",
+        "city",
+        "is_default",
+    )
+
+    search_fields = (
+        "full_name",
+        "phone",
+        "city",
+        "pincode",
+    )
 # Register your models here.

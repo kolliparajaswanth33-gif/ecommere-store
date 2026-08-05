@@ -24,10 +24,12 @@
             {% for product in products %}
                     <article class="product-card">
                         <a class="product-link" href="{% url 'store:product_detail' product.id %}">
-                            {% if product.image_url %}
-                                <img src="{% static product.image_url %}" alt="{{ product.name }}" loading="lazy">
+                            {% if product.image %}
+                               <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy">
+                            {% elif product.image_url %}
+                               <img src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy">
                             {% else %}
-                                <div class="image-placeholder">No image available</div>
+                                <div class="image-placeholder">No image available</div> 
                             {% endif %}
                         </a>
                         <div class="product-content">
