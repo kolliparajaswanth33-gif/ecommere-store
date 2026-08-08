@@ -1,16 +1,17 @@
 from django.contrib.auth import login
+from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.conf import settings
 from django.db import transaction
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
 from .cart import cart_total, get_cart
 from .emails import send_order_receipt
 from .forms import RegisterForm
-from .models import Order, OrderItem, Product
-
-
+from .models import Address, Coupon, Order, OrderItem, Product
 @login_required(login_url='store:login')
 def home(request):
     products = Product.objects.all()
@@ -104,48 +105,147 @@ def update_cart(request, product_id):
 def checkout(request):
     items = _cart_items(request)
     total = cart_total(items)
-    if not items:
-        return redirect('store:home')
 
-    if request.method == 'POST':
+    discount = 0
+    final_total = total
+    coupon = None
+
+    if not items:
+        return redirect("store:home")
+
+    if request.method == "POST":
+
+        coupon_code = request.POST.get("coupon_code", "").strip().upper()
+
+        if coupon_code:
+            try:
+                coupon = Coupon.objects.get(code=coupon_code)
+
+                today = timezone.now().date()
+
+                if not coupon.is_active:
+                    messages.error(request, "This coupon is inactive.")
+                    coupon = None
+
+                elif not (coupon.start_date <= today <= coupon.end_date):
+                    messages.error(request, "This coupon has expired.")
+                    coupon = None
+
+                elif coupon.max_uses > 0 and coupon.used_count >= coupon.max_uses:
+                    messages.error(request, "Coupon usage limit reached.")
+                    coupon = None
+
+                elif total < coupon.minimum_order_amount:
+                    messages.error(
+                        request,
+                        f"Minimum order amount is ₹{coupon.minimum_order_amount}"
+                    )
+                    coupon = None
+
+                else:
+                    if coupon.discount_type == "flat":
+                        discount = coupon.discount_value
+                    else:
+                        discount = (total * coupon.discount_value) / 100
+
+                    messages.success(
+                        request,
+                        f"Coupon '{coupon.code}' applied successfully!"
+                    )
+
+            except Coupon.DoesNotExist:
+                messages.error(request, "Invalid coupon code.")
+
+        final_total = max(total - discount, 0)
+
         with transaction.atomic():
+
             order = Order.objects.create(
                 user=request.user,
-                full_name=request.POST['full_name'],
-                email=request.POST['email'],
-                phone=request.POST['phone'],
-                address=request.POST['address'],
-                city=request.POST['city'],
-                postal_code=request.POST['postal_code'],
-                total_amount=total,
+                full_name=request.POST["full_name"],
+                email=request.POST["email"],
+                phone=request.POST["phone"],
+                address=request.POST["address"],
+                city=request.POST["city"],
+                postal_code=request.POST["postal_code"],
+                total_amount=final_total,
             )
+
+            # Save customer address
+            Address.objects.update_or_create(
+                user=request.user,
+                is_default=True,
+                defaults={
+                    "full_name": request.POST["full_name"],
+                    "phone": request.POST["phone"],
+                    "house_no": request.POST["address"],
+                    "street": "",
+                    "landmark": "",
+                    "city": request.POST["city"],
+                    "district": request.POST["city"],
+                    "state": "Andhra Pradesh",
+                    "pincode": request.POST["postal_code"],
+                },
+            )
+
+            # Save order items
             for item in items:
-                product = item['product']
+                product = item["product"]
+
                 OrderItem.objects.create(
                     order=order,
                     product=product,
                     product_name=product.name,
                     price=product.price,
-                    quantity=item['quantity'],
+                    quantity=item["quantity"],
                 )
-                product.stock -= item['quantity']
-                product.save(update_fields=['stock'])
 
-        request.session['cart'] = {}
+                product.stock -= item["quantity"]
+                product.save(update_fields=["stock"])
+
+            # Update coupon usage
+            if coupon:
+                coupon.used_count += 1
+                coupon.save(update_fields=["used_count"])
+
+        request.session["cart"] = {}
+
         if settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD:
             transaction.on_commit(lambda: send_order_receipt(order))
-        return redirect('store:order_success', order_id=order.id)
 
-    return render(request, 'store/checkout.html', {
-        'items': items,
-        'total': total,
-        'user': request.user,
-    })
+        return redirect("store:order_success", order_id=order.id)
 
+    return render(
+        request,
+        "store/checkout.html",
+        {
+            "items": items,
+            "total": total,
+            "discount": discount,
+            "final_total": final_total,
+            "user": request.user,
+        },
+    )
 
 @login_required
 def order_success(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
     return render(request, 'store/order_success.html', {'order': order})
 
+from django.contrib.auth.decorators import login_required
+
+
+@login_required
+def dashboard(request):
+    total_products = Product.objects.count()
+    total_orders = Order.objects.count()
+    total_customers = User.objects.count()
+
+    context = {
+        'total_products': total_products,
+        'total_orders': total_orders,
+        'total_customers': total_customers,
+    }
+
+    return render(request, 'store/dashboard/dashboard.html', context)
 # Create your views here.

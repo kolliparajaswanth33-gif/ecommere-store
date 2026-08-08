@@ -101,3 +101,28 @@ main { max-width: 1120px; margin: 0 auto; padding: 0 24px 48px; }
     .detail-image img, .detail-image .image-placeholder { height: 300px; }
     .purchase-actions { flex-direction: column; }
 }
+/* Coupon & Alert Messages */
+
+.messages-container{
+    width:90%;
+    margin:20px auto;
+}
+
+.alert{
+    padding:12px 18px;
+    margin-bottom:10px;
+    border-radius:8px;
+    font-weight:600;
+}
+
+.alert.success{
+    background:#d4edda;
+    color:#155724;
+    border:1px solid #c3e6cb;
+}
+
+.alert.error{
+    background:#f8d7da;
+    color:#721c24;
+    border:1px solid #f5c6cb;
+}

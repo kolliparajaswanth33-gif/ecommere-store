@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Dashboard</title>
+
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:Arial, sans-serif;
+        }
+
+        body{
+            background:#f5f5f5;
+        }
+
+        .navbar{
+            background:#2c3e50;
+            color:white;
+            padding:20px;
+        }
+
+        .navbar h1{
+            font-size:28px;
+        }
+
+        .container{
+            width:90%;
+            margin:30px auto;
+        }
+
+        .cards{
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+            gap:20px;
+        }
+
+        .card{
+            background:white;
+            padding:25px;
+            border-radius:10px;
+            box-shadow:0 3px 10px rgba(0,0,0,.1);
+            text-align:center;
+        }
+
+        .card h2{
+            color:#2c3e50;
+            margin-bottom:10px;
+        }
+
+        .card p{
+            font-size:30px;
+            font-weight:bold;
+            color:#27ae60;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<div class="navbar">
+    <h1>Kubera Kirana Shop - Owner Dashboard</h1>
+</div>
+
+<div class="container">
+
+    <div class="cards">
+
+        <div class="card">
+            <h2>Total Products</h2>
+           <p>{{ total_products }}</p>
+        </div>
+
+        <div class="card">
+           <h2>Total Orders</h2>
+           <p>{{ total_orders }}</p>
+        </div>
+
+        <div class="card">
+            <h2>Total Customers</h2>
+            <p>{{ total_customers }}</p>
+        </div>
+
+        <div class="card">
+            <h2>Total Sales</h2>
+            <p>Coming Soon</p>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

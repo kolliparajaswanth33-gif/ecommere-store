@@ -1,7 +1,6 @@
 from django.contrib import admin
 
-from .models import Order, OrderItem, Product, Address
-
+from .models import Address, Coupon, Order, OrderItem, Product
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('name', 'price', 'stock', 'created_at')
@@ -21,6 +20,31 @@ class OrderAdmin(admin.ModelAdmin):
     readonly_fields = ('total_amount', 'created_at')
     inlines = [OrderItemInline]
 
+
+
+@admin.register(Coupon)
+class CouponAdmin(admin.ModelAdmin):
+    list_display = (
+        'code',
+        'discount_type',
+        'discount_value',
+        'minimum_order_amount',
+        'max_uses',
+        'used_count',
+        'start_date',
+        'end_date',
+        'is_active',
+    )
+
+    search_fields = ('code',)
+
+    list_filter = (
+        'is_active',
+        'discount_type',
+        'start_date',
+        'end_date',
+    )    
+
 @admin.register(Address)
 class AddressAdmin(admin.ModelAdmin):
     list_display = (
@@ -28,6 +52,7 @@ class AddressAdmin(admin.ModelAdmin):
         "user",
         "phone",
         "city",
+        "district",
         "state",
         "pincode",
         "is_default",
@@ -35,7 +60,7 @@ class AddressAdmin(admin.ModelAdmin):
 
     list_filter = (
         "state",
-        "city",
+        "district",
         "is_default",
     )
 

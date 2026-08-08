@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Kubera Kirana Shop{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'store/css/style.css' %}">qqqqqqqqqqqq
+    <link rel="stylesheet" href="{% static 'store/css/style.css' %}">
 </head>
 <body>
     <header class="site-header">
@@ -27,10 +27,22 @@
         </nav>
     </header>
 
-    {% block content %}{% endblock %}
+    {% block content %}
+
+{% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+            <div class="alert {{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Your existing page content starts here -->{% endblock %}
 
     <footer class="site-footer">
-        <p>© 2026 Kubera Kirana Shop. Built by Kollipara Jaswanth.</p>
+        <p> This side Built by Kollipara Jaswanth.</p>
     </footer>
 </body>
 </html>

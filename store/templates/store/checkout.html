@@ -36,7 +36,32 @@
                 </div>
             </div>
 
-            <button class="primary-button" type="submit">Place order — ₹{{ total }}</button>
+        <hr>
+
+            <h3>Apply Coupon</h3>
+
+            <div class="coupon-box">
+            <label for="coupon_code">Coupon Code</label>
+
+             <input
+                    type="text"
+                    id="coupon_code"
+                    name="coupon_code"
+                    placeholder="Enter Coupon Code (Example: WELCOME100)"
+             >
+
+            <small>Example: WELCOME100</small>
+            </div>
+
+        {% if discount > 0 %}
+         <p style="color:green;">
+            <strong>Discount:</strong> ₹{{ discount }}
+         </p>
+        {% endif %}
+
+            <button class="primary-button" type="submit">
+                Place Order — ₹{{ final_total }}
+            </button>
         </form>
 
         <aside class="order-summary">
@@ -44,7 +69,26 @@
             {% for item in items %}
                 <p><span>{{ item.product.name }} × {{ item.quantity }}</span><strong>₹{{ item.subtotal }}</strong></p>
             {% endfor %}
-            <div class="summary-total"><span>Total</span><strong>₹{{ total }}</strong></div>
+            <div class="summary-details">
+
+            <p>
+            <span>Subtotal</span>
+            <strong>₹{{ total }}</strong>
+            </p>
+
+            {% if discount %}
+            <p style="color:green;">
+            <span>Discount</span>
+            <strong>-₹{{ discount }}</strong>
+            </p>
+            {% endif %}
+
+            <div class="summary-total">
+            <span>Final Total</span>
+            <strong>₹{{ final_total }}</strong>
+            </div>
+
+        </div>
         </aside>
     </section>
 </main>
