@@ -3,29 +3,111 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 
+# =========================================================
+# PRODUCT
+# =========================================================
+
 class Product(models.Model):
-    name = models.CharField(max_length=200)
+
+    name = models.CharField(
+        max_length=200
+    )
+
     description = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    image = models.ImageField(upload_to="products/", blank=True, null=True)
-    image_url = models.URLField(blank=True)
-    stock = models.PositiveIntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
+
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
+
+    image = models.ImageField(
+        upload_to="products/",
+        blank=True,
+        null=True
+    )
+
+    image_url = models.URLField(
+        blank=True
+    )
+
+    stock = models.PositiveIntegerField(
+        default=0
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
 
     def clean(self):
+
+        # Must choose exactly one:
+        # Upload Image OR Image URL
+
         if bool(self.image) == bool(self.image_url):
+
             raise ValidationError(
                 "Please choose either Upload Image or Image URL."
             )
 
     class Meta:
-        ordering = ["-created_at"]
+
+        ordering = [
+            "-created_at"
+        ]
 
     def __str__(self):
+
         return self.name
 
 
+# =========================================================
+# ORDER
+# =========================================================
+
 class Order(models.Model):
+
+    # -----------------------------------------------------
+    # ORDER STATUS
+    # -----------------------------------------------------
+
+    STATUS_CHOICES = [
+
+        (
+            "pending",
+            "Pending"
+        ),
+
+        (
+            "confirmed",
+            "Confirmed"
+        ),
+
+        (
+            "packed",
+            "Packed"
+        ),
+
+        (
+            "out_for_delivery",
+            "Out for Delivery"
+        ),
+
+        (
+            "delivered",
+            "Delivered"
+        ),
+
+        (
+            "cancelled",
+            "Cancelled"
+        ),
+
+    ]
+
+    # -----------------------------------------------------
+    # CUSTOMER
+    # -----------------------------------------------------
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -33,26 +115,77 @@ class Order(models.Model):
         blank=True,
     )
 
-    full_name = models.CharField(max_length=150)
+    full_name = models.CharField(
+        max_length=150
+    )
+
     email = models.EmailField()
-    phone = models.CharField(max_length=15)
+
+    phone = models.CharField(
+        max_length=15
+    )
+
+    # -----------------------------------------------------
+    # DELIVERY ADDRESS
+    # -----------------------------------------------------
 
     address = models.TextField()
-    city = models.CharField(max_length=100)
-    postal_code = models.CharField(max_length=10)
 
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    city = models.CharField(
+        max_length=100
+    )
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    postal_code = models.CharField(
+        max_length=10
+    )
+
+    # -----------------------------------------------------
+    # ORDER TOTAL
+    # -----------------------------------------------------
+
+    total_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
+
+    # -----------------------------------------------------
+    # ORDER STATUS
+    # -----------------------------------------------------
+
+    status = models.CharField(
+        max_length=30,
+        choices=STATUS_CHOICES,
+        default="pending"
+    )
+
+    # -----------------------------------------------------
+    # CREATED DATE
+    # -----------------------------------------------------
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
 
     class Meta:
-        ordering = ["-created_at"]
+
+        ordering = [
+            "-created_at"
+        ]
 
     def __str__(self):
-        return f"Order #{self.pk} - {self.full_name}"
 
+        return (
+            f"Order #{self.pk} - "
+            f"{self.full_name}"
+        )
+
+
+# =========================================================
+# ORDER ITEM
+# =========================================================
 
 class OrderItem(models.Model):
+
     order = models.ForeignKey(
         Order,
         on_delete=models.CASCADE,
@@ -64,21 +197,49 @@ class OrderItem(models.Model):
         on_delete=models.PROTECT,
     )
 
-    product_name = models.CharField(max_length=200)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    product_name = models.CharField(
+        max_length=200
+    )
+
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
+
     quantity = models.PositiveIntegerField()
 
     def __str__(self):
-        return f"{self.quantity} × {self.product_name}"
 
+        return (
+            f"{self.quantity} × "
+            f"{self.product_name}"
+        )
+
+
+# =========================================================
+# COUPON
+# =========================================================
 
 class Coupon(models.Model):
+
     DISCOUNT_TYPES = [
-        ("flat", "Flat Discount"),
-        ("percentage", "Percentage Discount"),
+
+        (
+            "flat",
+            "Flat Discount"
+        ),
+
+        (
+            "percentage",
+            "Percentage Discount"
+        ),
+
     ]
 
-    code = models.CharField(max_length=20, unique=True)
+    code = models.CharField(
+        max_length=20,
+        unique=True
+    )
 
     discount_type = models.CharField(
         max_length=20,
@@ -96,45 +257,98 @@ class Coupon(models.Model):
         default=0,
     )
 
-    max_uses = models.PositiveIntegerField(default=0)
-    used_count = models.PositiveIntegerField(default=0)
+    max_uses = models.PositiveIntegerField(
+        default=0
+    )
+
+    used_count = models.PositiveIntegerField(
+        default=0
+    )
 
     start_date = models.DateField()
+
     end_date = models.DateField()
 
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(
+        default=True
+    )
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
 
     def __str__(self):
+
         return self.code
 
 
+# =========================================================
+# ADDRESS
+# =========================================================
+
 class Address(models.Model):
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="addresses",
     )
 
-    full_name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=15)
+    full_name = models.CharField(
+        max_length=100
+    )
 
-    house_no = models.CharField(max_length=100)
-    street = models.CharField(max_length=200)
-    landmark = models.CharField(max_length=200, blank=True)
+    phone = models.CharField(
+        max_length=15
+    )
 
-    city = models.CharField(max_length=100)
-    district = models.CharField(max_length=100)
-    state = models.CharField(max_length=100)
-    pincode = models.CharField(max_length=6)
+    house_no = models.CharField(
+        max_length=100
+    )
 
-    is_default = models.BooleanField(default=False)
+    street = models.CharField(
+        max_length=200
+    )
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    landmark = models.CharField(
+        max_length=200,
+        blank=True
+    )
+
+    city = models.CharField(
+        max_length=100
+    )
+
+    district = models.CharField(
+        max_length=100
+    )
+
+    state = models.CharField(
+        max_length=100
+    )
+
+    pincode = models.CharField(
+        max_length=6
+    )
+
+    is_default = models.BooleanField(
+        default=False
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
 
     class Meta:
-        ordering = ["-is_default", "-created_at"]
+
+        ordering = [
+            "-is_default",
+            "-created_at"
+        ]
 
     def __str__(self):
-        return f"{self.full_name} - {selfcity}"
+
+        return (
+            f"{self.full_name} - "
+            f"{self.city}"
+        )

@@ -12,7 +12,13 @@
             <div class="cart-list">
                 {% for item in items %}
                     <article class="cart-item">
-                        <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}">
+                        {% if item.product.image %}
+                            <img   src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="product-image" >
+                        {% elif item.product.image_url %}
+                            <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="product-image" >
+                        {% else %}
+                            <div class="no-image"> No Image </div>
+                        {% endif %}
                         <div>
                             <h2>{{ item.product.name }}</h2>
                             <p>₹{{ item.product.price }} each</p>

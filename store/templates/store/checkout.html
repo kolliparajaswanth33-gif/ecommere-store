@@ -3,93 +3,432 @@
 {% block title %}Billing | Kubera Kirana Shop{% endblock %}
 
 {% block content %}
+
 <main class="checkout-page">
+
     <div class="checkout-heading">
-        <p class="eyebrow">SECURE CHECKOUT</p>
-        <h1>Billing details</h1>
-        <p>Enter your delivery details to place the order.</p>
+
+        <p class="eyebrow">
+            SECURE CHECKOUT
+        </p>
+
+        <h1>
+            Billing details
+        </h1>
+
+        <p>
+            Enter your delivery details to place the order.
+        </p>
+
     </div>
 
+
+    <!-- =====================================================
+         MESSAGES
+    ====================================================== -->
+
+    {% if messages %}
+
+        <div class="checkout-messages">
+
+            {% for message in messages %}
+
+                <div class="checkout-message {{ message.tags }}">
+
+                    {% if message.tags == "success" %}
+                        ✅
+                    {% elif message.tags == "warning" %}
+                        ⚠️
+                    {% elif message.tags == "error" %}
+                        ❌
+                    {% endif %}
+
+                    {{ message }}
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
+
+
+
     <section class="checkout-layout">
+
+
+        <!-- =================================================
+             BILLING FORM
+        ================================================== -->
+
         <form method="post" class="billing-form">
+
             {% csrf_token %}
-            <label for="full_name">Full name</label>
-            <input id="full_name" name="full_name" value="{{ user.get_full_name|default:user.username }}" required>
 
-            <label for="email">Email address</label>
-            <input id="email" type="email" name="email" value="{{ user.email }}" required>
 
-            <label for="phone">Phone number</label>
-            <input id="phone" type="tel" name="phone" pattern="[0-9]{10}" placeholder="10-digit mobile number" required>
+            <!-- FULL NAME -->
 
-            <label for="address">Delivery address</label>
-            <textarea id="address" name="address" rows="4" required></textarea>
+            <label for="full_name">
+                Full name
+            </label>
+
+            <input
+                id="full_name"
+                name="full_name"
+                value="{{ user.get_full_name|default:user.username }}"
+                required
+            >
+
+
+            <!-- EMAIL -->
+
+            <label for="email">
+                Email address
+            </label>
+
+            <input
+                id="email"
+                type="email"
+                name="email"
+                value="{{ user.email }}"
+                required
+            >
+
+
+            <!-- PHONE -->
+
+            <label for="phone">
+                Phone number
+            </label>
+
+            <input
+                id="phone"
+                type="tel"
+                name="phone"
+                pattern="[0-9]{10}"
+                maxlength="10"
+                placeholder="10-digit mobile number"
+                required
+            >
+
+
+            <!-- ADDRESS -->
+
+            <label for="address">
+                Delivery address
+            </label>
+
+            <textarea
+                id="address"
+                name="address"
+                rows="4"
+                required
+            ></textarea>
+
+
+            <!-- CITY + PIN -->
 
             <div class="form-row">
+
                 <div>
-                    <label for="city">City</label>
-                    <input id="city" name="city" required>
+
+                    <label for="city">
+                        City
+                    </label>
+
+                    <input
+                        id="city"
+                        name="city"
+                        required
+                    >
+
                 </div>
+
+
                 <div>
-                    <label for="postal_code">PIN code</label>
-                    <input id="postal_code" name="postal_code" pattern="[0-9]{6}" placeholder="6 digits" required>
+
+                    <label for="postal_code">
+                        PIN code
+                    </label>
+
+                    <input
+                        id="postal_code"
+                        name="postal_code"
+                        pattern="[0-9]{6}"
+                        maxlength="6"
+                        placeholder="6 digits"
+                        required
+                    >
+
                 </div>
+
             </div>
 
-        <hr>
 
-            <h3>Apply Coupon</h3>
+            <hr>
+
+
+            <!-- =================================================
+                 COUPON
+            ================================================== -->
+
+            <h3>
+                Apply Coupon
+            </h3>
+
 
             <div class="coupon-box">
-            <label for="coupon_code">Coupon Code</label>
 
-             <input
+                <label for="coupon_code">
+                    Coupon Code
+                </label>
+
+
+                <input
                     type="text"
                     id="coupon_code"
                     name="coupon_code"
-                    placeholder="Enter Coupon Code (Example: WELCOME100)"
-             >
+                    placeholder="Enter Coupon Code"
+                    value="{{ request.POST.coupon_code|default:'' }}"
+                    autocomplete="off"
+                >
 
-            <small>Example: WELCOME100</small>
+
+                <small>
+                    Example: WELCOME100
+                </small>
+
             </div>
 
-        {% if discount > 0 %}
-         <p style="color:green;">
-            <strong>Discount:</strong> ₹{{ discount }}
-         </p>
-        {% endif %}
 
-            <button class="primary-button" type="submit">
-                Place Order — ₹{{ final_total }}
-            </button>
-        </form>
+            <!-- =================================================
+                 DISCOUNT
+            ================================================== -->
 
-        <aside class="order-summary">
-            <h2>Your items</h2>
-            {% for item in items %}
-                <p><span>{{ item.product.name }} × {{ item.quantity }}</span><strong>₹{{ item.subtotal }}</strong></p>
-            {% endfor %}
-            <div class="summary-details">
+            {% if discount > 0 %}
 
-            <p>
-            <span>Subtotal</span>
-            <strong>₹{{ total }}</strong>
-            </p>
+                <div class="coupon-success">
 
-            {% if discount %}
-            <p style="color:green;">
-            <span>Discount</span>
-            <strong>-₹{{ discount }}</strong>
-            </p>
+                    ✅
+
+                    <strong>
+                        Coupon applied successfully!
+                    </strong>
+
+                    <span>
+                        You saved ₹{{ discount }}
+                    </span>
+
+                </div>
+
             {% endif %}
 
-            <div class="summary-total">
-            <span>Final Total</span>
-            <strong>₹{{ final_total }}</strong>
+
+
+            <!-- =================================================
+                 PLACE ORDER
+            ================================================== -->
+
+            <button
+                class="primary-button"
+                type="submit"
+            >
+
+                Place Order — ₹{{ final_total }}
+
+            </button>
+
+        </form>
+
+
+
+        <!-- =================================================
+             ORDER SUMMARY
+        ================================================== -->
+
+        <aside class="order-summary">
+
+            <h2>
+                Your items
+            </h2>
+
+
+            {% for item in items %}
+
+                <p>
+
+                    <span>
+                        {{ item.product.name }}
+                        ×
+                        {{ item.quantity }}
+                    </span>
+
+                    <strong>
+                        ₹{{ item.subtotal }}
+                    </strong>
+
+                </p>
+
+            {% endfor %}
+
+
+            <div class="summary-details">
+
+
+                <!-- SUBTOTAL -->
+
+                <p>
+
+                    <span>
+                        Subtotal
+                    </span>
+
+                    <strong>
+                        ₹{{ total }}
+                    </strong>
+
+                </p>
+
+
+                <!-- DISCOUNT -->
+
+                {% if discount > 0 %}
+
+                    <p class="discount-row">
+
+                        <span>
+                            Discount
+                        </span>
+
+                        <strong>
+                            -₹{{ discount }}
+                        </strong>
+
+                    </p>
+
+                {% endif %}
+
+
+                <!-- FINAL TOTAL -->
+
+                <div class="summary-total">
+
+                    <span>
+                        Final Total
+                    </span>
+
+                    <strong>
+                        ₹{{ final_total }}
+                    </strong>
+
+                </div>
+
+
             </div>
 
-        </div>
         </aside>
+
     </section>
+
 </main>
+
+
+<!-- =========================================================
+     CHECKOUT PAGE STYLES
+========================================================= -->
+
+<style>
+
+.checkout-messages {
+    width: 92%;
+    max-width: 1200px;
+    margin: 0 auto 25px auto;
+}
+
+.checkout-message {
+    padding: 14px 18px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+
+/* SUCCESS */
+
+.checkout-message.success {
+    background: #eafaf1;
+    color: #1e8449;
+    border: 1px solid #a9dfbf;
+}
+
+
+/* WARNING */
+
+.checkout-message.warning {
+    background: #fff8e1;
+    color: #8a6500;
+    border: 1px solid #f1d67a;
+}
+
+
+/* ERROR */
+
+.checkout-message.error {
+    background: #fdecea;
+    color: #c0392b;
+    border: 1px solid #f5b7b1;
+}
+
+
+/* COUPON SUCCESS */
+
+.coupon-success {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    margin-top: 15px;
+    margin-bottom: 20px;
+
+    padding: 14px 16px;
+
+    background: #eafaf1;
+
+    border: 1px solid #a9dfbf;
+
+    border-radius: 8px;
+
+    color: #1e8449;
+}
+
+.coupon-success span {
+    font-size: 14px;
+}
+
+
+/* DISCOUNT SUMMARY */
+
+.discount-row {
+    color: #1e8449;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+
+    .checkout-messages {
+        width: 94%;
+    }
+
+    .checkout-message {
+        font-size: 14px;
+    }
+
+}
+
+</style>
+
 {% endblock %}

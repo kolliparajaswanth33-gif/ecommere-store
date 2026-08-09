@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>{{ title }} | Kubera Kirana Shop</title>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f4f6f8;
+            color: #263238;
+        }
+
+        /* NAVBAR */
+
+        .navbar {
+            background: #2c3e50;
+            color: white;
+
+            padding: 18px 40px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar h1 {
+            font-size: 24px;
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+
+            background: #3498db;
+
+            padding: 9px 15px;
+
+            border-radius: 6px;
+        }
+
+        .back-link:hover {
+            background: #2980b9;
+        }
+
+        /* CONTAINER */
+
+        .container {
+            width: 92%;
+            max-width: 700px;
+
+            margin: 35px auto;
+        }
+
+        /* FORM BOX */
+
+        .form-box {
+            background: white;
+
+            padding: 30px;
+
+            border-radius: 12px;
+
+            box-shadow:
+                0 3px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .form-box h2 {
+            margin-bottom: 7px;
+            color: #2c3e50;
+        }
+
+        .subtitle {
+            color: #777;
+            margin-bottom: 25px;
+        }
+
+        /* IMAGE INFORMATION */
+
+        .image-note {
+            background: #eef7ff;
+
+            color: #2874a6;
+
+            padding: 15px;
+
+            border-radius: 7px;
+
+            margin-bottom: 25px;
+
+            font-size: 14px;
+
+            line-height: 1.6;
+        }
+
+        .image-note strong {
+            color: #21618c;
+        }
+
+        .image-note ul {
+            margin-top: 8px;
+            margin-left: 20px;
+        }
+
+        /* ERRORS */
+
+        .form-errors {
+            background: #fdecea;
+
+            color: #c0392b;
+
+            padding: 12px 15px;
+
+            border-radius: 7px;
+
+            margin-bottom: 20px;
+        }
+
+        .errorlist {
+            list-style: none;
+
+            color: #e74c3c;
+
+            margin-top: 6px;
+
+            font-size: 14px;
+        }
+
+        /* FIELDS */
+
+        .field {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+
+            font-weight: bold;
+
+            margin-bottom: 7px;
+
+            color: #333;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+
+            padding: 12px;
+
+            border: 1px solid #ccc;
+
+            border-radius: 6px;
+
+            font-size: 15px;
+
+            background: white;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+
+            border-color: #3498db;
+        }
+
+        input[type="file"] {
+            padding: 9px;
+
+            background: #fafafa;
+        }
+
+        .help {
+            display: block;
+
+            margin-top: 6px;
+
+            color: #888;
+
+            font-size: 13px;
+        }
+
+        /* IMAGE PREVIEW */
+
+        .current-image {
+            margin-bottom: 20px;
+        }
+
+        .current-image p {
+            font-weight: bold;
+
+            margin-bottom: 8px;
+        }
+
+        .current-image img {
+            width: 150px;
+            height: 150px;
+
+            object-fit: cover;
+
+            border-radius: 8px;
+
+            border: 1px solid #ddd;
+        }
+
+        /* BUTTONS */
+
+        .buttons {
+            display: flex;
+
+            gap: 12px;
+
+            margin-top: 25px;
+        }
+
+        .save-button,
+        .cancel-button {
+
+            flex: 1;
+
+            padding: 13px;
+
+            border: none;
+
+            border-radius: 6px;
+
+            text-align: center;
+
+            text-decoration: none;
+
+            font-weight: bold;
+
+            font-size: 15px;
+
+            cursor: pointer;
+        }
+
+        .save-button {
+            background: #27ae60;
+
+            color: white;
+        }
+
+        .save-button:hover {
+            background: #219150;
+        }
+
+        .cancel-button {
+            background: #95a5a6;
+
+            color: white;
+        }
+
+        .cancel-button:hover {
+            background: #7f8c8d;
+        }
+
+        /* MOBILE */
+
+        @media (max-width: 600px) {
+
+            .navbar {
+                padding: 18px 20px;
+
+                gap: 10px;
+            }
+
+            .navbar h1 {
+                font-size: 20px;
+            }
+
+            .back-link {
+                padding: 8px 12px;
+
+                font-size: 13px;
+            }
+
+            .container {
+                width: 94%;
+            }
+
+            .form-box {
+                padding: 22px;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- NAVBAR -->
+
+<header class="navbar">
+
+    <h1>
+        Kubera Kirana Shop
+    </h1>
+
+    <a
+        href="{% url 'management:products' %}"
+        class="back-link"
+    >
+        ← Products
+    </a>
+
+</header>
+
+
+<!-- MAIN -->
+
+<main class="container">
+
+
+    <div class="form-box">
+
+
+        <h2>
+            {{ title }}
+        </h2>
+
+
+        <p class="subtitle">
+            Enter the product information below.
+        </p>
+
+
+        <!-- IMAGE INFORMATION -->
+
+        <div class="image-note">
+
+            <strong>Product Image</strong>
+
+            <ul>
+
+                <li>
+                    Upload an image from your computer
+                    <strong>OR</strong>
+                    enter an image URL.
+                </li>
+
+                <li>
+                    You cannot use both.
+                </li>
+
+                <li>
+                    For a new product, one image option
+                    is required.
+                </li>
+
+            </ul>
+
+        </div>
+
+
+        <!-- FORM -->
+
+        <form
+            method="post"
+            enctype="multipart/form-data"
+        >
+
+            {% csrf_token %}
+
+
+            <!-- NON FIELD ERRORS -->
+
+            {% if form.non_field_errors %}
+
+                <div class="form-errors">
+
+                    {% for error in form.non_field_errors %}
+
+                        <div>
+                            {{ error }}
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            {% endif %}
+
+
+            <!-- FIELDS -->
+
+            {% for field in form %}
+
+                <div class="field">
+
+
+                    {{ field.label_tag }}
+
+
+                    {{ field }}
+
+
+                    {% if field.help_text %}
+
+                        <small class="help">
+
+                            {{ field.help_text }}
+
+                        </small>
+
+                    {% endif %}
+
+
+                    {% if field.errors %}
+
+                        {{ field.errors }}
+
+                    {% endif %}
+
+
+                </div>
+
+            {% endfor %}
+
+
+            <!-- BUTTONS -->
+
+            <div class="buttons">
+
+
+                <a
+                    href="{% url 'management:products' %}"
+                    class="cancel-button"
+                >
+                    Cancel
+                </a>
+
+
+                <button
+                    type="submit"
+                    class="save-button"
+                >
+                    Save Product
+                </button>
+
+
+            </div>
+
+
+        </form>
+
+
+    </div>
+
+
+</main>
+
+
+</body>
+
+</html>

@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        {{ title|default:"Add Coupon" }} | Kubera Kirana Shop
+    </title>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f4f7fa;
+            color: #2c3e50;
+        }
+
+        /* =========================
+           NAVBAR
+        ========================= */
+
+        .navbar {
+            background: #2c3e50;
+            color: white;
+
+            padding: 18px 30px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar h1 {
+            font-size: 28px;
+        }
+
+        .navbar a {
+            background: #3498db;
+            color: white;
+
+            text-decoration: none;
+
+            padding: 12px 20px;
+
+            border-radius: 7px;
+
+            font-weight: bold;
+        }
+
+        .navbar a:hover {
+            background: #2980b9;
+        }
+
+        /* =========================
+           CONTAINER
+        ========================= */
+
+        .container {
+            width: 92%;
+            max-width: 950px;
+
+            margin: 40px auto;
+        }
+
+        /* =========================
+           FORM CARD
+        ========================= */
+
+        .form-card {
+            background: white;
+
+            padding: 38px;
+
+            border-radius: 15px;
+
+            box-shadow:
+                0 5px 20px rgba(
+                    0,
+                    0,
+                    0,
+                    0.08
+                );
+        }
+
+        .form-card h2 {
+            font-size: 32px;
+
+            color: #1f405f;
+
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #777;
+
+            font-size: 18px;
+
+            margin-bottom: 30px;
+        }
+
+        /* =========================
+           INFORMATION BOX
+        ========================= */
+
+        .info-box {
+            background: #eaf5ff;
+
+            border-left: 6px solid #3498db;
+
+            padding: 20px;
+
+            border-radius: 8px;
+
+            margin-bottom: 30px;
+
+            color: #1f5f91;
+
+            line-height: 1.6;
+
+            font-size: 16px;
+        }
+
+        .info-title {
+            display: block;
+
+            font-size: 19px;
+
+            font-weight: bold;
+
+            margin-bottom: 8px;
+        }
+
+        /* =========================
+           ERROR
+        ========================= */
+
+        .error-box {
+            background: #ffe9e9;
+
+            border-left: 5px solid #e74c3c;
+
+            color: #c0392b;
+
+            padding: 15px;
+
+            border-radius: 7px;
+
+            margin-bottom: 25px;
+        }
+
+        .error-box ul {
+            margin-left: 20px;
+        }
+
+        .field-error {
+            color: #e74c3c;
+
+            font-size: 14px;
+
+            font-weight: bold;
+
+            margin-top: 6px;
+        }
+
+        /* =========================
+           FORM GRID
+        ========================= */
+
+        .form-grid {
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
+
+            gap: 25px;
+        }
+
+        .form-group {
+            width: 100%;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* =========================
+           LABEL
+        ========================= */
+
+        label {
+            display: block;
+
+            font-size: 17px;
+
+            font-weight: bold;
+
+            color: #2c3e50;
+
+            margin-bottom: 9px;
+        }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        /* =========================
+           ACTUAL INPUT BOXES
+        ========================= */
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        select {
+
+            display: block;
+
+            width: 100%;
+
+            height: 48px;
+
+            padding: 10px 14px;
+
+            background: white;
+
+            color: #222;
+
+            border: 2px solid #ccd6dd;
+
+            border-radius: 7px;
+
+            font-size: 16px;
+
+            outline: none;
+
+            appearance: auto;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="date"]:focus,
+        select:focus {
+
+            border-color: #3498db;
+
+            box-shadow:
+                0 0 0 3px rgba(
+                    52,
+                    152,
+                    219,
+                    0.15
+                );
+        }
+
+        /* =========================
+           HELP TEXT
+        ========================= */
+
+        .help-text {
+            margin-top: 7px;
+
+            color: #777;
+
+            font-size: 14px;
+
+            line-height: 1.4;
+        }
+
+        /* =========================
+           ACTIVE CHECKBOX
+        ========================= */
+
+        .active-box {
+
+            grid-column: 1 / -1;
+
+            background: #f8fafb;
+
+            border: 1px solid #dfe5e8;
+
+            border-radius: 8px;
+
+            padding: 18px;
+        }
+
+        .active-label {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+
+            margin: 0;
+
+            cursor: pointer;
+
+            font-size: 17px;
+        }
+
+        .active-label input[type="checkbox"] {
+
+            width: 21px;
+
+            height: 21px;
+
+            cursor: pointer;
+
+            accent-color: #27ae60;
+        }
+
+        /* =========================
+           BUTTONS
+        ========================= */
+
+        .buttons {
+
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
+
+            gap: 15px;
+
+            margin-top: 30px;
+        }
+
+        .btn {
+
+            height: 52px;
+
+            border: none;
+
+            border-radius: 7px;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            font-size: 17px;
+
+            font-weight: bold;
+
+            text-decoration: none;
+
+            cursor: pointer;
+        }
+
+        .cancel-btn {
+
+            background: #95a5a6;
+
+            color: white;
+        }
+
+        .cancel-btn:hover {
+
+            background: #7f8c8d;
+        }
+
+        .save-btn {
+
+            background: #27ae60;
+
+            color: white;
+        }
+
+        .save-btn:hover {
+
+            background: #219150;
+        }
+
+        /* =========================
+           FOOTER
+        ========================= */
+
+        .footer {
+
+            text-align: center;
+
+            color: #777;
+
+            padding: 25px;
+
+            margin-top: 30px;
+        }
+
+        /* =========================
+           MOBILE
+        ========================= */
+
+        @media (max-width: 700px) {
+
+            .navbar {
+                padding: 15px 20px;
+            }
+
+            .navbar h1 {
+                font-size: 21px;
+            }
+
+            .navbar a {
+                padding: 9px 12px;
+                font-size: 13px;
+            }
+
+            .container {
+                width: 94%;
+                margin: 25px auto;
+            }
+
+            .form-card {
+                padding: 22px;
+            }
+
+            .form-card h2 {
+                font-size: 26px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .full-width,
+            .active-box {
+                grid-column: auto;
+            }
+
+            .buttons {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     NAVBAR
+========================= -->
+
+<header class="navbar">
+
+    <h1>
+        Kubera Kirana Shop
+    </h1>
+
+    <a href="{% url 'management:coupons' %}">
+        ← Coupons
+    </a>
+
+</header>
+
+
+<!-- =========================
+     MAIN
+========================= -->
+
+<main class="container">
+
+    <section class="form-card">
+
+        <h2>
+            {{ title|default:"Add Coupon" }}
+        </h2>
+
+        <p class="subtitle">
+            Create a discount coupon for your customers.
+        </p>
+
+
+        <!-- =========================
+             INFORMATION
+        ========================= -->
+
+        <div class="info-box">
+
+            <span class="info-title">
+                Coupon Information
+            </span>
+
+            Percentage discounts can be from
+            1% to 100%.
+
+            For a flat discount, enter the amount
+            in rupees.
+
+            Set Maximum Uses to
+            <strong>0</strong>
+            for unlimited usage.
+
+        </div>
+
+
+        <!-- =========================
+             FORM ERRORS
+        ========================= -->
+
+        {% if form.non_field_errors %}
+
+            <div class="error-box">
+
+                {{ form.non_field_errors }}
+
+            </div>
+
+        {% endif %}
+
+
+        <!-- =========================
+             FORM
+        ========================= -->
+
+        <form method="POST">
+
+            {% csrf_token %}
+
+
+            <div class="form-grid">
+
+
+                <!-- =========================
+                     COUPON CODE
+                ========================= -->
+
+                <div class="form-group full-width">
+
+                    <label for="id_code">
+
+                        Coupon Code
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+                    <input
+                        type="text"
+                        id="id_code"
+                        name="code"
+                        placeholder="Example: SAVE100"
+                        value="{{ form.code.value|default:'' }}"
+                        required
+                    >
+
+                    {% for error in form.code.errors %}
+
+                        <div class="field-error">
+                            {{ error }}
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+
+                <!-- =========================
+                     DISCOUNT TYPE
+                ========================= -->
+
+                <div class="form-group">
+
+                    <label for="id_discount_type">
+
+                        Discount Type
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+                    <select
+                        id="id_discount_type"
+                        name="discount_type"
+                        required
+                    >
+
+                        {% for value, label in form.discount_type.field.choices %}
+
+                            <option
+                                value="{{ value }}"
+                                {% if form.discount_type.value|stringformat:"s" == value|stringformat:"s" %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ label }}
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                    {% for error in form.discount_type.errors %}
+
+                        <div class="field-error">
+                            {{ error }}
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+
+                <!-- =========================
+                     DISCOUNT VALUE
+                ========================= -->
+
+                <div class="form-group">
+
+                    <label for="id_discount_value">
+
+                        Discount Value
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+                    <input
+                        type="number"
+                        id="id_discount_value"
+                        name="discount_value"
+                        placeholder="Enter discount value"
+                        step="0.01"
+                        min="0"
+                        value="{{ form.discount_value.value|default:'' }}"
+                        required
+                    >
+
+                    <div class="help-text">
+
+                        Percentage: 10 = 10%
+
+                        <br>
+
+                        Flat: 100 = ₹100
+
+                    </div>
+
+                    {% for error in form.discount_value.errors %}
+
+                        <div class="field-error">
+                            {{ error }}
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+
+                <!-- =========================
+                     MINIMUM ORDER
+                ========================= -->
+
+                <div class="form-group">
+
+                    <label for="id_minimum_order_amount">
+
+                        Minimum Order Amount
+
+                    </label>
+
+                    <input
+                        type="number"
+                        id="id_minimum_order_amount"
+                        name="minimum_order_amount"
+                        placeholder="Example: ₹500"
+                        step="0.01"
+                        min="0"
+                        value="{{ form.minimum_order_amount.value|default:'' }}"
+                    >
+
+                    <div class="help-text">
+                        Example: ₹500
+                    </div>
+
+                    {% for error in form.minimum_order_amount.errors %}
+
+                        <div class="field-error">
+                            {{ error }}
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+
+                <!-- =========================
+                     MAXIMUM USES
+                ========================= -->
+
+                <div class="form-group">
+
+                    <label for="id_max_uses">
+
+                        Maximum Uses
+
+                    </label>
+
+                    <input
+                        type="number"
+                        id="id_max_uses"
+                        name="max_uses"
+                        placeholder="Enter 0 for unlimited"
+                        min="0"
+                        value="{{ form.max_uses.value|default:'0' }}"
+                    >
+
+                    <div class="help-text">
+                        Enter 0 for unlimited usage.
+                    </div>
+
+                    {% for error in form.max_uses.errors %}
+
+                        <div class="field-error">
+                            {{ error }}
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+
+                <!-- =========================
+                     START DATE
+                ========================= -->
+
+                <div class="form-group">
+
+                    <label for="id_start_date">
+
+                        Start Date
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+                    <input
+                        type="date"
+                        id="id_start_date"
+                        name="start_date"
+                        value="{{ form.start_date.value|default:'' }}"
+                        required
+                    >
+
+                    {% for error in form.start_date.errors %}
+
+                        <div class="field-error">
+                            {{ error }}
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+
+                <!-- =========================
+                     END DATE
+                ========================= -->
+
+                <div class="form-group">
+
+                    <label for="id_end_date">
+
+                        End Date
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+                    <input
+                        type="date"
+                        id="id_end_date"
+                        name="end_date"
+                        value="{{ form.end_date.value|default:'' }}"
+                        required
+                    >
+
+                    {% for error in form.end_date.errors %}
+
+                        <div class="field-error">
+                            {{ error }}
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+
+                <!-- =========================
+                     ACTIVE
+                ========================= -->
+
+                <div class="active-box">
+
+                    <label
+                        class="active-label"
+                        for="id_is_active"
+                    >
+
+                        <input
+                            type="checkbox"
+                            id="id_is_active"
+                            name="is_active"
+                            value="on"
+                            {% if form.is_active.value %}
+                                checked
+                            {% endif %}
+                        >
+
+                        <span>
+                            Coupon is Active
+                        </span>
+
+                    </label>
+
+                    {% for error in form.is_active.errors %}
+
+                        <div class="field-error">
+                            {{ error }}
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+
+            </div>
+
+
+            <!-- =========================
+                 BUTTONS
+            ========================= -->
+
+            <div class="buttons">
+
+                <a
+                    href="{% url 'management:coupons' %}"
+                    class="btn cancel-btn"
+                >
+                    Cancel
+                </a>
+
+                <button
+                    type="submit"
+                    class="btn save-btn"
+                >
+                    Save Coupon
+                </button>
+
+            </div>
+
+
+        </form>
+
+    </section>
+
+</main>
+
+
+<!-- =========================
+     FOOTER
+========================= -->
+
+<footer class="footer">
+
+    Kubera Kirana Shop — Owner Management System
+
+</footer>
+
+
+</body>
+
+</html>

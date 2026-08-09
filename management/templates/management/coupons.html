@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Manage Coupons | Kubera Kirana Shop</title>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        /* =========================
+           NAVBAR
+        ========================= */
+
+        .navbar {
+            background: #2c3e50;
+            color: white;
+
+            padding: 20px 40px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar h1 {
+            font-size: 25px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .nav-buttons a {
+            color: white;
+            text-decoration: none;
+
+            padding: 10px 18px;
+
+            border-radius: 6px;
+
+            font-weight: bold;
+        }
+
+        .dashboard-btn {
+            background: #3498db;
+        }
+
+        .add-btn {
+            background: #27ae60;
+        }
+
+        .dashboard-btn:hover {
+            background: #2980b9;
+        }
+
+        .add-btn:hover {
+            background: #219150;
+        }
+
+        /* =========================
+           CONTAINER
+        ========================= */
+
+        .container {
+            width: 92%;
+            max-width: 1200px;
+
+            margin: 35px auto;
+        }
+
+        /* =========================
+           PAGE HEADER
+        ========================= */
+
+        .page-header {
+            margin-bottom: 25px;
+        }
+
+        .page-header h2 {
+            color: #2c3e50;
+            margin-bottom: 7px;
+        }
+
+        .page-header p {
+            color: #777;
+        }
+
+        .coupon-count {
+            margin-top: 10px;
+
+            font-weight: bold;
+
+            color: #27ae60 !important;
+        }
+
+        /* =========================
+           MESSAGES
+        ========================= */
+
+        .messages {
+            margin-bottom: 20px;
+        }
+
+        .message {
+            padding: 13px 16px;
+
+            border-radius: 7px;
+
+            margin-bottom: 10px;
+
+            font-weight: bold;
+        }
+
+        .message.success {
+            background: #eafaf1;
+            color: #219150;
+        }
+
+        .message.error {
+            background: #fdecea;
+            color: #c0392b;
+        }
+
+        /* =========================
+           COUPON GRID
+        ========================= */
+
+        .coupon-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(320px, 1fr)
+                );
+
+            gap: 22px;
+        }
+
+        /* =========================
+           COUPON CARD
+        ========================= */
+
+        .coupon-card {
+
+            background: white;
+
+            border-radius: 12px;
+
+            padding: 25px;
+
+            box-shadow:
+                0 3px 12px
+                rgba(0, 0, 0, 0.08);
+
+            position: relative;
+        }
+
+        .coupon-card:hover {
+
+            box-shadow:
+                0 5px 18px
+                rgba(0, 0, 0, 0.12);
+        }
+
+        /* =========================
+           COUPON HEADER
+        ========================= */
+
+        .coupon-header {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-bottom: 20px;
+        }
+
+        .coupon-code {
+
+            font-size: 24px;
+
+            font-weight: bold;
+
+            color: #2c3e50;
+
+            letter-spacing: 1px;
+        }
+
+        /* =========================
+           STATUS
+        ========================= */
+
+        .status {
+
+            padding: 6px 12px;
+
+            border-radius: 20px;
+
+            font-size: 13px;
+
+            font-weight: bold;
+        }
+
+        .status.active {
+
+            background: #eafaf1;
+
+            color: #27ae60;
+        }
+
+        .status.inactive {
+
+            background: #fdecea;
+
+            color: #e74c3c;
+        }
+
+        /* =========================
+           COUPON DETAILS
+        ========================= */
+
+        .coupon-details {
+
+            line-height: 1.8;
+
+            color: #555;
+
+            margin-bottom: 20px;
+        }
+
+        .coupon-details strong {
+
+            color: #2c3e50;
+        }
+
+        .discount {
+
+            font-size: 20px;
+
+            font-weight: bold;
+
+            color: #27ae60;
+
+            margin-bottom: 10px;
+        }
+
+        /* =========================
+           ACTION BUTTONS
+        ========================= */
+
+        .actions {
+
+            display: flex;
+
+            gap: 10px;
+
+            padding-top: 18px;
+
+            border-top:
+                1px solid #eee;
+        }
+
+        .action-btn {
+
+            flex: 1;
+
+            border: none;
+
+            padding: 11px;
+
+            border-radius: 6px;
+
+            color: white;
+
+            font-weight: bold;
+
+            text-decoration: none;
+
+            text-align: center;
+
+            cursor: pointer;
+
+            font-size: 14px;
+        }
+
+        .edit-btn {
+
+            background: #3498db;
+        }
+
+        .edit-btn:hover {
+
+            background: #2980b9;
+        }
+
+        .delete-btn {
+
+            background: #e74c3c;
+        }
+
+        .delete-btn:hover {
+
+            background: #c0392b;
+        }
+
+        /* =========================
+           DELETE FORM
+        ========================= */
+
+        .delete-form {
+
+            flex: 1;
+
+            margin: 0;
+        }
+
+        .delete-form button {
+
+            width: 100%;
+        }
+
+        /* =========================
+           NO COUPONS
+        ========================= */
+
+        .no-coupons {
+
+            background: white;
+
+            padding: 60px 20px;
+
+            text-align: center;
+
+            border-radius: 12px;
+
+            box-shadow:
+                0 3px 12px
+                rgba(0, 0, 0, 0.08);
+        }
+
+        .no-coupons h3 {
+
+            color: #2c3e50;
+
+            margin-bottom: 10px;
+        }
+
+        .no-coupons p {
+
+            color: #777;
+
+            margin-bottom: 20px;
+        }
+
+        .no-coupons a {
+
+            display: inline-block;
+
+            background: #27ae60;
+
+            color: white;
+
+            text-decoration: none;
+
+            padding: 12px 20px;
+
+            border-radius: 7px;
+
+            font-weight: bold;
+        }
+
+        /* =========================
+           FOOTER
+        ========================= */
+
+        .footer {
+
+            text-align: center;
+
+            padding: 30px;
+
+            color: #777;
+
+            margin-top: 30px;
+        }
+
+        /* =========================
+           MOBILE
+        ========================= */
+
+        @media (max-width: 600px) {
+
+            .navbar {
+
+                padding: 15px 20px;
+
+                flex-direction: column;
+
+                align-items: flex-start;
+
+                gap: 15px;
+            }
+
+            .navbar h1 {
+
+                font-size: 20px;
+            }
+
+            .nav-buttons {
+
+                width: 100%;
+            }
+
+            .nav-buttons a {
+
+                flex: 1;
+
+                text-align: center;
+
+                padding: 9px 10px;
+
+                font-size: 13px;
+            }
+
+            .container {
+
+                width: 94%;
+
+                margin-top: 25px;
+            }
+
+            .coupon-grid {
+
+                grid-template-columns: 1fr;
+            }
+
+            .coupon-header {
+
+                align-items: flex-start;
+
+                gap: 10px;
+
+                flex-direction: column;
+            }
+
+            .coupon-code {
+
+                font-size: 21px;
+            }
+
+            .actions {
+
+                flex-direction: column;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     NAVBAR
+========================= -->
+
+<header class="navbar">
+
+    <h1>
+        Kubera Kirana Shop
+    </h1>
+
+
+    <div class="nav-buttons">
+
+        <a
+            href="{% url 'management:dashboard' %}"
+            class="dashboard-btn"
+        >
+            ← Dashboard
+        </a>
+
+
+        <a
+            href="{% url 'management:add_coupon' %}"
+            class="add-btn"
+        >
+            + Add Coupon
+        </a>
+
+    </div>
+
+</header>
+
+
+
+<!-- =========================
+     MAIN
+========================= -->
+
+<main class="container">
+
+
+    <!-- =========================
+         MESSAGES
+    ========================= -->
+
+    {% if messages %}
+
+        <div class="messages">
+
+            {% for message in messages %}
+
+                <div
+                    class="message
+                    {% if message.tags %}
+                        {{ message.tags }}
+                    {% endif %}"
+                >
+
+                    {{ message }}
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
+
+
+
+    <!-- =========================
+         PAGE HEADER
+    ========================= -->
+
+    <div class="page-header">
+
+        <h2>
+            Manage Coupons
+        </h2>
+
+        <p>
+            Create, edit and manage discount coupons
+            for your shop.
+        </p>
+
+        <p class="coupon-count">
+
+            Total Coupons:
+            {{ coupons|length }}
+
+        </p>
+
+    </div>
+
+
+
+    <!-- =========================
+         COUPONS
+    ========================= -->
+
+    {% if coupons %}
+
+        <div class="coupon-grid">
+
+
+            {% for coupon in coupons %}
+
+
+                <article class="coupon-card">
+
+
+                    <!-- COUPON HEADER -->
+
+                    <div class="coupon-header">
+
+                        <div class="coupon-code">
+
+                            {{ coupon.code }}
+
+                        </div>
+
+
+                        {% if coupon.is_active %}
+
+                            <span class="status active">
+                                Active
+                            </span>
+
+                        {% else %}
+
+                            <span class="status inactive">
+                                Inactive
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+
+
+                    <!-- COUPON DETAILS -->
+
+                    <div class="coupon-details">
+
+
+                        <div class="discount">
+
+                            {% if coupon.discount_type == "percentage" %}
+
+                                {{ coupon.discount_value }}% OFF
+
+                            {% else %}
+
+                                ₹{{ coupon.discount_value }} OFF
+
+                            {% endif %}
+
+                        </div>
+
+
+                        <p>
+
+                            <strong>
+                                Minimum Order:
+                            </strong>
+
+                            ₹{{ coupon.minimum_order_amount }}
+
+                        </p>
+
+
+                        <p>
+
+                            <strong>
+                                Used:
+                            </strong>
+
+                            {{ coupon.used_count }}
+
+                            /
+
+                            {% if coupon.max_uses == 0 %}
+
+                                Unlimited
+
+                            {% else %}
+
+                                {{ coupon.max_uses }}
+
+                            {% endif %}
+
+                        </p>
+
+
+                        <p>
+
+                            <strong>
+                                Valid:
+                            </strong>
+
+                            {{ coupon.start_date|date:"d M Y" }}
+
+                            -
+
+                            {{ coupon.end_date|date:"d M Y" }}
+
+                        </p>
+
+
+                        <p>
+
+                            <strong>
+                                Created:
+                            </strong>
+
+                            {{ coupon.created_at|date:"d M Y" }}
+
+                        </p>
+
+
+                    </div>
+
+
+
+                    <!-- =========================
+                         ACTIONS
+                    ========================= -->
+
+                    <div class="actions">
+
+
+                        <a
+                            href="{% url 'management:edit_coupon' coupon.id %}"
+                            class="action-btn edit-btn"
+                        >
+                            ✏ Edit
+                        </a>
+
+
+                        <form
+                            method="POST"
+                            action="{% url 'management:delete_coupon' coupon.id %}"
+                            class="delete-form"
+                            onsubmit="return confirm(
+                                'Are you sure you want to delete coupon {{ coupon.code }}?'
+                            );"
+                        >
+
+                            {% csrf_token %}
+
+                            <button
+                                type="submit"
+                                class="action-btn delete-btn"
+                            >
+                                🗑 Delete
+                            </button>
+
+                        </form>
+
+
+                    </div>
+
+
+                </article>
+
+
+            {% endfor %}
+
+
+        </div>
+
+
+    {% else %}
+
+
+        <!-- =========================
+             NO COUPONS
+        ========================= -->
+
+        <div class="no-coupons">
+
+            <h3>
+                No Coupons Found
+            </h3>
+
+            <p>
+                You have not created any discount coupons yet.
+            </p>
+
+
+            <a
+                href="{% url 'management:add_coupon' %}"
+            >
+                + Create Your First Coupon
+            </a>
+
+        </div>
+
+
+    {% endif %}
+
+
+</main>
+
+
+
+<!-- =========================
+     FOOTER
+========================= -->
+
+<footer class="footer">
+
+    <p>
+        Kubera Kirana Shop — Owner Management System
+    </p>
+
+</footer>
+
+
+</body>
+
+</html>

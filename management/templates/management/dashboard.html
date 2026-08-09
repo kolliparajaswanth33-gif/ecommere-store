@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Owner Dashboard | Kubera Kirana Shop</title>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        /* =========================
+           NAVBAR
+        ========================= */
+
+        .navbar {
+            background: #2c3e50;
+            color: white;
+
+            padding: 20px 40px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar h1 {
+            font-size: 26px;
+            margin-bottom: 5px;
+        }
+
+        .navbar span {
+            font-size: 14px;
+            color: #d6dce1;
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+
+            background: #e74c3c;
+
+            padding: 10px 18px;
+
+            border-radius: 6px;
+
+            font-weight: bold;
+
+            transition: 0.2s;
+        }
+
+        .navbar a:hover {
+            background: #c0392b;
+        }
+
+        /* =========================
+           MAIN CONTAINER
+        ========================= */
+
+        .container {
+            width: 92%;
+            max-width: 1200px;
+
+            margin: 30px auto;
+        }
+
+        /* =========================
+           DASHBOARD CARDS
+        ========================= */
+
+        .cards {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(220px, 1fr)
+                );
+
+            gap: 20px;
+
+            margin-bottom: 35px;
+        }
+
+        .card {
+            background: white;
+
+            padding: 25px;
+
+            border-radius: 12px;
+
+            box-shadow:
+                0 3px 12px rgba(
+                    0,
+                    0,
+                    0,
+                    0.08
+                );
+
+            text-align: center;
+
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+        }
+
+        .card h2 {
+            color: #2c3e50;
+
+            margin-bottom: 12px;
+
+            font-size: 18px;
+        }
+
+        .card p {
+            font-size: 30px;
+
+            font-weight: bold;
+
+            color: #27ae60;
+        }
+
+        /* =========================
+           QUICK ACTIONS
+        ========================= */
+
+        .quick-actions {
+            background: white;
+
+            padding: 25px;
+
+            border-radius: 12px;
+
+            margin-bottom: 35px;
+
+            box-shadow:
+                0 3px 12px rgba(
+                    0,
+                    0,
+                    0,
+                    0.08
+                );
+        }
+
+        .quick-actions h2 {
+            margin-bottom: 20px;
+
+            color: #2c3e50;
+        }
+
+        .action-buttons {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 12px;
+        }
+
+        .action-buttons a {
+            text-decoration: none;
+
+            padding: 12px 18px;
+
+            border-radius: 7px;
+
+            background: #3498db;
+
+            color: white;
+
+            font-weight: bold;
+
+            transition: 0.2s;
+        }
+
+        .action-buttons a:hover {
+            background: #2980b9;
+        }
+
+        /* ADD PRODUCT */
+
+        .action-buttons .add-product {
+            background: #27ae60;
+        }
+
+        .action-buttons .add-product:hover {
+            background: #219150;
+        }
+
+        /* ORDERS */
+
+        .action-buttons .orders {
+            background: #8e44ad;
+        }
+
+        .action-buttons .orders:hover {
+            background: #71368a;
+        }
+
+        /* COUPONS */
+
+        .action-buttons .coupons {
+            background: #f39c12;
+        }
+
+        .action-buttons .coupons:hover {
+            background: #d68910;
+        }
+
+        /* =========================
+           ORDERS SECTION
+        ========================= */
+
+        .orders-section {
+            background: white;
+
+            padding: 25px;
+
+            border-radius: 12px;
+
+            box-shadow:
+                0 3px 12px rgba(
+                    0,
+                    0,
+                    0,
+                    0.08
+                );
+        }
+
+        .orders-section > h2 {
+            color: #2c3e50;
+
+            margin-bottom: 25px;
+        }
+
+        /* =========================
+           ORDER CARD
+        ========================= */
+
+        .order-card {
+            border: 1px solid #e1e5e8;
+
+            border-radius: 10px;
+
+            margin-bottom: 20px;
+
+            overflow: hidden;
+
+            background: #fff;
+        }
+
+        .order-card:last-child {
+            margin-bottom: 0;
+        }
+
+        /* =========================
+           ORDER HEADER
+        ========================= */
+
+        .order-header {
+            background: #f8f9fa;
+
+            padding: 18px 20px;
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            border-bottom:
+                1px solid #e1e5e8;
+        }
+
+        .order-header h3 {
+            color: #2c3e50;
+
+            margin-bottom: 6px;
+        }
+
+        .order-header p {
+            color: #777;
+
+            font-size: 14px;
+        }
+
+        .order-total {
+            color: #27ae60;
+
+            font-size: 20px;
+        }
+
+        /* =========================
+           CUSTOMER DETAILS
+        ========================= */
+
+        .customer-details {
+            padding: 20px;
+
+            border-bottom:
+                1px solid #e1e5e8;
+        }
+
+        .customer-details h4 {
+            color: #2c3e50;
+
+            margin-bottom: 12px;
+        }
+
+        .customer-details p {
+            margin-bottom: 7px;
+
+            line-height: 1.5;
+        }
+
+        /* =========================
+           ORDER ITEMS
+        ========================= */
+
+        .order-items {
+            padding: 20px;
+        }
+
+        .order-items h4 {
+            color: #2c3e50;
+
+            margin-bottom: 15px;
+        }
+
+        .item-row {
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            padding: 12px 0;
+
+            border-bottom:
+                1px solid #eee;
+        }
+
+        .item-row:last-child {
+            border-bottom: none;
+        }
+
+        .item-name {
+            font-weight: 600;
+        }
+
+        .item-quantity {
+            color: #777;
+
+            margin-left: 5px;
+        }
+
+        .item-row strong {
+            color: #2c3e50;
+        }
+
+        /* =========================
+           NO ORDERS
+        ========================= */
+
+        .no-orders {
+            text-align: center;
+
+            padding: 40px 20px;
+
+            background: #f8f9fa;
+
+            border-radius: 8px;
+        }
+
+        .no-orders h3 {
+            color: #2c3e50;
+
+            margin-bottom: 8px;
+        }
+
+        .no-orders p {
+            color: #777;
+        }
+
+        /* =========================
+           FOOTER
+        ========================= */
+
+        .footer {
+            text-align: center;
+
+            padding: 25px;
+
+            margin-top: 40px;
+
+            color: #777;
+        }
+
+        /* =========================
+           MOBILE
+        ========================= */
+
+        @media (max-width: 600px) {
+
+            .navbar {
+                padding: 15px 20px;
+
+                align-items: flex-start;
+
+                gap: 15px;
+            }
+
+            .navbar h1 {
+                font-size: 20px;
+            }
+
+            .navbar a {
+                padding: 8px 12px;
+
+                font-size: 13px;
+            }
+
+            .container {
+                width: 94%;
+            }
+
+            .order-header {
+                flex-direction: column;
+
+                align-items: flex-start;
+
+                gap: 15px;
+            }
+
+            .order-total {
+                font-size: 18px;
+            }
+
+            .customer-details,
+            .order-items {
+                padding: 15px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .action-buttons a {
+                text-align: center;
+
+                width: 100%;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     NAVBAR
+========================= -->
+
+<header class="navbar">
+
+    <div>
+
+        <h1>
+            Kubera Kirana Shop
+        </h1>
+
+        <span>
+            Owner Management Dashboard
+        </span>
+
+    </div>
+
+
+    <a href="{% url 'management:logout' %}">
+        Logout
+    </a>
+
+</header>
+
+
+
+<!-- =========================
+     MAIN
+========================= -->
+
+<main class="container">
+
+
+    <!-- =========================
+         DASHBOARD CARDS
+    ========================= -->
+
+    <section class="cards">
+
+
+        <!-- TODAY'S ORDERS -->
+
+        <div class="card">
+
+            <h2>
+                Today's Orders
+            </h2>
+
+            <p>
+                {{ today_orders_count }}
+            </p>
+
+        </div>
+
+
+        <!-- TODAY'S REVENUE -->
+
+        <div class="card">
+
+            <h2>
+                Today's Revenue
+            </h2>
+
+            <p>
+                ₹{{ today_revenue }}
+            </p>
+
+        </div>
+
+
+        <!-- TOTAL PRODUCTS -->
+
+        <div class="card">
+
+            <h2>
+                Total Products
+            </h2>
+
+            <p>
+                {{ total_products }}
+            </p>
+
+        </div>
+
+
+        <!-- TOTAL CUSTOMERS -->
+
+        <div class="card">
+
+            <h2>
+                Total Customers
+            </h2>
+
+            <p>
+                {{ total_customers }}
+            </p>
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =========================
+         QUICK ACTIONS
+    ========================= -->
+
+    <section class="quick-actions">
+
+        <h2>
+            Quick Actions
+        </h2>
+
+
+        <div class="action-buttons">
+
+
+            <!-- ADD PRODUCT -->
+
+            <a
+                href="{% url 'management:add_product' %}"
+                class="add-product"
+            >
+                + Add Product
+            </a>
+
+
+
+            <!-- MANAGE PRODUCTS -->
+
+            <a
+                href="{% url 'management:products' %}"
+            >
+                Manage Products
+            </a>
+
+
+
+            <!-- ALL ORDERS -->
+
+            <a
+                href="{% url 'management:orders' %}"
+                class="orders"
+            >
+                All Orders
+            </a>
+
+
+
+            <!-- MANAGE COUPONS -->
+
+            <a
+                href="{% url 'management:coupons' %}"
+                class="coupons"
+            >
+                Manage Coupons
+            </a>
+
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =========================
+         TODAY'S ORDERS
+    ========================= -->
+
+    <section class="orders-section">
+
+
+        <h2>
+            Today's Orders
+        </h2>
+
+
+        {% if today_orders %}
+
+
+            {% for order in today_orders %}
+
+
+                <div class="order-card">
+
+
+                    <!-- ORDER HEADER -->
+
+                    <div class="order-header">
+
+
+                        <div>
+
+                            <h3>
+                                Order #{{ order.id }}
+                            </h3>
+
+
+                            <p>
+
+                                {{ order.created_at|date:"d M Y" }}
+
+                                at
+
+                                {{ order.created_at|time:"h:i A" }}
+
+                            </p>
+
+                        </div>
+
+
+                        <strong class="order-total">
+
+                            ₹{{ order.total_amount }}
+
+                        </strong>
+
+
+                    </div>
+
+
+
+                    <!-- CUSTOMER DETAILS -->
+
+                    <div class="customer-details">
+
+
+                        <h4>
+                            Customer Details
+                        </h4>
+
+
+                        <p>
+
+                            <strong>Name:</strong>
+
+                            {{ order.full_name }}
+
+                        </p>
+
+
+                        <p>
+
+                            <strong>Phone:</strong>
+
+                            {{ order.phone }}
+
+                        </p>
+
+
+                        <p>
+
+                            <strong>Email:</strong>
+
+                            {{ order.email }}
+
+                        </p>
+
+
+                        <p>
+
+                            <strong>Address:</strong>
+
+                            {{ order.address }},
+
+                            {{ order.city }}
+
+                            -
+
+                            {{ order.postal_code }}
+
+                        </p>
+
+
+                    </div>
+
+
+
+                    <!-- ORDER PRODUCTS -->
+
+                    <div class="order-items">
+
+
+                        <h4>
+                            Products
+                        </h4>
+
+
+                        {% for item in order.items.all %}
+
+
+                            <div class="item-row">
+
+
+                                <div>
+
+                                    <span class="item-name">
+
+                                        {{ item.product_name }}
+
+                                    </span>
+
+
+                                    <span class="item-quantity">
+
+                                        × {{ item.quantity }}
+
+                                    </span>
+
+                                </div>
+
+
+                                <strong>
+
+                                    ₹{{ item.price }}
+
+                                </strong>
+
+
+                            </div>
+
+
+                        {% empty %}
+
+
+                            <p>
+                                No products found for this order.
+                            </p>
+
+
+                        {% endfor %}
+
+
+                    </div>
+
+
+                </div>
+
+
+            {% endfor %}
+
+
+        {% else %}
+
+
+            <div class="no-orders">
+
+                <h3>
+                    No orders today
+                </h3>
+
+                <p>
+                    No customers have placed an order today.
+                </p>
+
+            </div>
+
+
+        {% endif %}
+
+
+    </section>
+
+
+</main>
+
+
+
+<!-- =========================
+     FOOTER
+========================= -->
+
+<footer class="footer">
+
+    <p>
+        Kubera Kirana Shop — Owner Management Dashboard
+    </p>
+
+</footer>
+
+
+</body>
+
+</html>
