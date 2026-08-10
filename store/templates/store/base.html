@@ -15,6 +15,7 @@
             <a href="#products">Products</a>
             <a href="{% url 'store:cart' %}">Cart <span class="cart-count">{{ cart_count }}</span></a>
             {% if user.is_authenticated %}
+                <a href="{% url 'store:my_orders' %}">My Orders</a>
                 <span class="user-name">Hi, {{ user.username }}</span>
                 <form class="logout-form" method="post" action="{% url 'store:logout' %}">
                     {% csrf_token %}
@@ -27,9 +28,7 @@
         </nav>
     </header>
 
-    {% block content %}
-
-{% if messages %}
+    {% if messages %}
     <div class="messages-container">
         {% for message in messages %}
             <div class="alert {{ message.tags }}">
@@ -37,9 +36,9 @@
             </div>
         {% endfor %}
     </div>
-{% endif %}
+    {% endif %}
 
-<!-- Your existing page content starts here -->{% endblock %}
+    {% block content %}{% endblock %}
 
     <footer class="site-footer">
         <p> This side Built by Kollipara Jaswanth.</p>

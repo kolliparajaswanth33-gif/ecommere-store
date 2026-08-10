@@ -223,6 +223,16 @@
             background: #d68910;
         }
 
+        /* PAYMENT SETTINGS */
+
+        .action-buttons .payment-settings {
+            background: #16a085;
+        }
+
+        .action-buttons .payment-settings:hover {
+            background: #117a65;
+        }
+
         /* =========================
            ORDERS SECTION
         ========================= */
@@ -626,6 +636,33 @@
                 All Orders
             </a>
 
+            <a
+                href="{% url 'management:new_orders' %}"
+                class="orders"
+            >
+                New Orders{% if pending_orders_count %} ({{ pending_orders_count }}){% endif %}
+            </a>
+
+            <a href="{% url 'management:orders_by_status' 'confirmed' %}" class="orders">
+                Confirmed Orders
+            </a>
+
+            <a href="{% url 'management:orders_by_status' 'packed' %}" class="orders">
+                Packed Orders
+            </a>
+
+            <a href="{% url 'management:orders_by_status' 'out_for_delivery' %}" class="orders">
+                Out for Delivery
+            </a>
+
+            <a href="{% url 'management:orders_by_status' 'delivered' %}" class="orders">
+                Delivered Orders
+            </a>
+
+            <a href="{% url 'management:orders_by_status' 'cancelled' %}" class="orders">
+                Cancelled Orders
+            </a>
+
 
 
             <!-- MANAGE COUPONS -->
@@ -636,6 +673,20 @@
             >
                 Manage Coupons
             </a>
+
+
+            <!-- PAYMENT SETTINGS (MANAGEMENT USERS ONLY) -->
+
+            {% if request.user.is_staff %}
+
+                <a
+                    href="{% url 'management:payment_settings' %}"
+                    class="payment-settings"
+                >
+                    Payment Settings
+                </a>
+
+            {% endif %}
 
 
         </div>

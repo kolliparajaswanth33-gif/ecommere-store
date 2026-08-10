@@ -3,7 +3,7 @@ from django.core.mail import send_mail
 
 
 def send_order_receipt(order):
-    """Send a simple billing receipt to the email entered at checkout."""
+    """Send the customer bill after an owner confirms the order."""
     item_lines = '\n'.join(
         f'- {item.product_name} × {item.quantity}: ₹{item.price * item.quantity}'
         for item in order.items.all()
@@ -15,7 +15,8 @@ def send_order_receipt(order):
         f'Billing and delivery address:\n{order.address}, {order.city} - {order.postal_code}\n\n'
         f'Items:\n{item_lines}\n\n'
         f'Total amount: ₹{order.total_amount}\n\n'
-        'Your order has been received successfully.'
+        'Your payment has been verified and the order is confirmed.\n'
+        'This email is your bill/receipt.'
     )
     send_mail(
         subject=f'Kubara Kirana Shop bill - Order #{order.id}',

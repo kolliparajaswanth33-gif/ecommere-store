@@ -1,0 +1,428 @@
+{% extends "store/base.html" %}
+
+{% block title %}My Addresses | Kubera Kirana Shop{% endblock %}
+
+{% block content %}
+
+<main class="addresses-page">
+
+    <div class="addresses-header">
+
+        <div>
+            <p class="eyebrow">DELIVERY</p>
+
+            <h1>My Addresses</h1>
+
+            <p>
+                Save your address once and use it for future orders.
+            </p>
+        </div>
+
+        <a
+            href="{% url 'store:address_add' %}"
+            class="add-address-btn"
+        >
+            + Add New Address
+        </a>
+
+    </div>
+
+
+    {% if messages %}
+
+        <div class="messages">
+
+            {% for message in messages %}
+
+                <div class="message {{ message.tags }}">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% endif %}
+
+
+    {% if addresses %}
+
+        <div class="address-grid">
+
+            {% for address in addresses %}
+
+                <div
+                    class="address-card
+                    {% if address.is_default %}
+                        default-address
+                    {% endif %}"
+                >
+
+                    <div class="address-card-header">
+
+                        <div>
+
+                            <h2>
+                                {{ address.full_name }}
+                            </h2>
+
+                            {% if address.is_default %}
+
+                                <span class="default-badge">
+                                    DEFAULT
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="address-details">
+
+                        <p>
+                            <strong>Phone:</strong>
+                            {{ address.phone }}
+                        </p>
+
+                        <p>
+                            <strong>Address:</strong><br>
+
+                            {{ address.house_no }},
+
+                            {% if address.street %}
+                                {{ address.street }},
+                            {% endif %}
+
+                            {% if address.landmark %}
+                                {{ address.landmark }},
+                            {% endif %}
+
+                            {{ address.city }},
+                            {{ address.district }},
+                            {{ address.state }}
+                            - {{ address.pincode }}
+                        </p>
+
+                    </div>
+
+
+                    <div class="address-actions">
+
+                        <a
+                            href="{% url 'store:address_edit' address.id %}"
+                            class="edit-btn"
+                        >
+                            Edit
+                        </a>
+
+
+                        {% if not address.is_default %}
+
+                            <form
+                                method="post"
+                                action="{% url 'store:address_default' address.id %}"
+                            >
+
+                                {% csrf_token %}
+
+                                <button
+                                    type="submit"
+                                    class="default-btn"
+                                >
+                                    Make Default
+                                </button>
+
+                            </form>
+
+                        {% endif %}
+
+
+                        <form
+                            method="post"
+                            action="{% url 'store:address_delete' address.id %}"
+                            onsubmit="return confirm('Are you sure you want to delete this address?');"
+                        >
+
+                            {% csrf_token %}
+
+                            <button
+                                type="submit"
+                                class="delete-btn"
+                            >
+                                Delete
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="empty-addresses">
+
+            <div class="empty-icon">
+                📍
+            </div>
+
+            <h2>No saved addresses</h2>
+
+            <p>
+                Add your delivery address once.
+                Next time you can select it directly during checkout.
+            </p>
+
+            <a
+                href="{% url 'store:address_add' %}"
+                class="add-address-btn"
+            >
+                + Add Your First Address
+            </a>
+
+        </div>
+
+    {% endif %}
+
+
+</main>
+
+
+<style>
+
+.addresses-page {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+
+.addresses-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+
+.addresses-header h1 {
+    margin: 5px 0;
+}
+
+
+.addresses-header p {
+    margin: 0;
+}
+
+
+.eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    opacity: 0.7;
+}
+
+
+.add-address-btn {
+    display: inline-block;
+    padding: 12px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    background: #222;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+
+.add-address-btn:hover {
+    opacity: 0.85;
+}
+
+
+.messages {
+    margin-bottom: 25px;
+}
+
+
+.message {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background: #f2f2f2;
+}
+
+
+.address-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(auto-fit, minmax(300px, 1fr));
+
+    gap: 20px;
+}
+
+
+.address-card {
+    padding: 22px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background: white;
+}
+
+
+.default-address {
+    border: 2px solid #222;
+}
+
+
+.address-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+
+.address-card h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+}
+
+
+.default-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 20px;
+    background: #222;
+    color: white;
+}
+
+
+.address-details {
+    line-height: 1.7;
+    margin-bottom: 20px;
+}
+
+
+.address-details p {
+    margin: 8px 0;
+}
+
+
+.address-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+
+.address-actions form {
+    margin: 0;
+}
+
+
+.edit-btn,
+.default-btn,
+.delete-btn {
+    display: inline-block;
+    padding: 9px 13px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+}
+
+
+.edit-btn {
+    background: #eee;
+    color: #222;
+}
+
+
+.default-btn {
+    background: #222;
+    color: white;
+}
+
+
+.delete-btn {
+    background: #eee;
+    color: #b00020;
+}
+
+
+.empty-addresses {
+    text-align: center;
+    padding: 70px 20px;
+    border: 1px dashed #ccc;
+    border-radius: 12px;
+}
+
+
+.empty-icon {
+    font-size: 45px;
+    margin-bottom: 15px;
+}
+
+
+.empty-addresses h2 {
+    margin-bottom: 10px;
+}
+
+
+.empty-addresses p {
+    max-width: 500px;
+    margin: 0 auto 25px;
+    line-height: 1.6;
+}
+
+
+@media (max-width: 700px) {
+
+    .addresses-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .add-address-btn {
+        text-align: center;
+    }
+
+    .address-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .address-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .edit-btn,
+    .default-btn,
+    .delete-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .address-actions form {
+        width: 100%;
+    }
+
+}
+
+</style>
+
+{% endblock %}

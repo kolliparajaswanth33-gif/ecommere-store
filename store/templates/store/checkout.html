@@ -1,10 +1,756 @@
-{% extends 'store/base.html' %}
+{% extends "store/base.html" %}
 
-{% block title %}Billing | Kubera Kirana Shop{% endblock %}
+{% block title %}Checkout | Kubera Kirana Shop{% endblock %}
 
 {% block content %}
 
+<style>
+/* =========================================================
+   CHECKOUT PAGE
+========================================================= */
+
+.checkout-page {
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.checkout-heading {
+    margin-bottom: 32px;
+}
+
+.checkout-heading .eyebrow {
+    color: #2563eb;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    margin: 0 0 8px;
+}
+
+.checkout-heading h1 {
+    margin: 0 0 8px;
+    font-size: 38px;
+    line-height: 1.2;
+    color: #172554;
+}
+
+.checkout-heading p {
+    margin: 0;
+    color: #64748b;
+    font-size: 16px;
+}
+
+
+/* =========================================================
+   MESSAGES
+========================================================= */
+
+.checkout-messages {
+    margin-bottom: 22px;
+}
+
+.message {
+    padding: 13px 16px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.message.success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.message.error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.message.warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.message.info {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+
+/* =========================================================
+   CHECKOUT LAYOUT
+========================================================= */
+
+.checkout-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 350px;
+    gap: 28px;
+    align-items: start;
+}
+
+.checkout-left {
+    min-width: 0;
+}
+
+.checkout-right {
+    min-width: 0;
+    position: sticky;
+    top: 90px;
+}
+
+
+/* =========================================================
+   SECTIONS
+========================================================= */
+
+.checkout-section {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 26px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 20px rgba(15, 23, 42, 0.06);
+}
+
+.section-heading {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.section-number {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 800;
+    font-size: 16px;
+}
+
+.section-heading h2 {
+    margin: 0 0 5px;
+    color: #172554;
+    font-size: 23px;
+}
+
+.section-heading p {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   SAVED ADDRESSES
+========================================================= */
+
+.saved-addresses {
+    display: grid;
+    gap: 14px;
+}
+
+.saved-address-card {
+    position: relative;
+    display: block;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 18px;
+    cursor: pointer;
+    background: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.saved-address-card:hover {
+    border-color: #93c5fd;
+    background: #f8fbff;
+}
+
+.saved-address-card.selected-address {
+    border-color: #2563eb;
+    background: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.saved-address-card input {
+    position: absolute;
+    opacity: 0;
+}
+
+.address-card-content {
+    padding-left: 2px;
+}
+
+.address-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.address-card-top strong {
+    color: #172554;
+    font-size: 16px;
+}
+
+.default-badge {
+    background: #dbeafe;
+    color: #1d4ed8;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.address-card-content p {
+    margin: 5px 0;
+    color: #475569;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.address-phone {
+    font-weight: 600;
+}
+
+.address-card-actions {
+    margin-top: 12px;
+}
+
+.address-card-actions a {
+    color: #2563eb;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.address-card-actions a:hover {
+    text-decoration: underline;
+}
+
+
+/* =========================================================
+   ADD ADDRESS
+========================================================= */
+
+.add-address-box {
+    margin-top: 16px;
+}
+
+.add-address-button,
+.primary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 18px;
+    background: #2563eb;
+    color: #ffffff !important;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 700;
+    border: none;
+    transition: 0.2s;
+}
+
+.add-address-button:hover,
+.primary-button:hover {
+    background: #1d4ed8;
+}
+
+.plus-icon {
+    font-size: 20px;
+}
+
+
+/* =========================================================
+   NO ADDRESS
+========================================================= */
+
+.no-address-box {
+    text-align: center;
+    padding: 28px 15px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 14px;
+    background: #f8fafc;
+}
+
+.no-address-icon {
+    font-size: 40px;
+    margin-bottom: 8px;
+}
+
+.no-address-box h3 {
+    margin: 8px 0;
+    color: #172554;
+}
+
+.no-address-box p {
+    color: #64748b;
+    margin-bottom: 20px;
+}
+
+
+/* =========================================================
+   FORM
+========================================================= */
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 7px;
+    color: #334155;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.form-group input,
+.coupon-row input,
+.utr-box input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 13px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    outline: none;
+    background: #ffffff;
+    color: #172554;
+    font-size: 15px;
+}
+
+.form-group input:focus,
+.coupon-row input:focus,
+.utr-box input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+
+
+/* =========================================================
+   COUPON
+========================================================= */
+
+.coupon-row {
+    display: flex;
+    gap: 10px;
+}
+
+.coupon-row input {
+    flex: 1;
+}
+
+.secondary-button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 10px;
+    background: #0f172a;
+    color: #ffffff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.secondary-button:hover {
+    background: #1e293b;
+}
+
+
+/* =========================================================
+   PAYMENT OPTIONS
+========================================================= */
+
+.payment-options {
+    display: grid;
+    gap: 12px;
+}
+
+.payment-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 17px;
+    border: 2px solid #e2e8f0;
+    border-radius: 13px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.payment-option:hover {
+    border-color: #93c5fd;
+}
+
+.payment-option input {
+    margin-top: 4px;
+    accent-color: #2563eb;
+}
+
+.payment-option-content {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.payment-option-content strong {
+    color: #172554;
+}
+
+.payment-option-content span {
+    color: #64748b;
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   UPI
+========================================================= */
+
+.upi-details,
+.cod-details {
+    margin-top: 18px;
+    padding: 20px;
+    border-radius: 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.upi-header {
+    text-align: center;
+}
+
+.upi-header h3 {
+    margin: 0 0 8px;
+    color: #172554;
+}
+
+.upi-header p {
+    margin: 0;
+    color: #475569;
+}
+
+.qr-section {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.qr-section p {
+    color: #64748b;
+}
+
+.upi-qr {
+    display: block;
+    width: 220px;
+    height: 220px;
+    object-fit: contain;
+    margin: 15px auto;
+    padding: 10px;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.upi-id-box {
+    padding: 14px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 14px;
+}
+
+.upi-id-box span {
+    display: block;
+    color: #64748b;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.upi-id-box strong {
+    color: #172554;
+    font-size: 16px;
+}
+
+.payment-instructions {
+    padding: 14px;
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 15px;
+}
+
+.payment-instructions strong {
+    color: #172554;
+}
+
+.payment-instructions p {
+    margin: 8px 0 0;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.utr-box label {
+    display: block;
+    margin-bottom: 7px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.utr-box small {
+    display: block;
+    margin-top: 7px;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+
+/* =========================================================
+   COD
+========================================================= */
+
+.cod-message {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.cod-icon {
+    font-size: 38px;
+}
+
+.cod-message h3 {
+    margin: 0 0 5px;
+    color: #172554;
+}
+
+.cod-message p {
+    margin: 0;
+    color: #64748b;
+}
+
+
+/* =========================================================
+   ORDER SUMMARY
+========================================================= */
+
+.order-summary-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 5px 20px rgba(15, 23, 42, 0.06);
+}
+
+.summary-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 18px;
+}
+
+.summary-heading h2 {
+    margin: 0;
+    color: #172554;
+    font-size: 23px;
+}
+
+.item-count {
+    background: #eff6ff;
+    color: #2563eb;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.order-items {
+    display: grid;
+    gap: 13px;
+}
+
+.order-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    padding-bottom: 13px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.order-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.order-item-info strong {
+    color: #172554;
+}
+
+.order-item-info span {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.order-item > strong {
+    color: #172554;
+    white-space: nowrap;
+}
+
+.price-summary {
+    margin-top: 18px;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 8px 0;
+    color: #475569;
+}
+
+.price-row strong {
+    color: #172554;
+}
+
+.discount-row {
+    color: #16a34a;
+}
+
+.discount-row strong {
+    color: #16a34a;
+}
+
+.total-row {
+    border-top: 2px solid #e2e8f0;
+    margin-top: 10px;
+    padding-top: 16px;
+    font-size: 21px;
+}
+
+.total-row span,
+.total-row strong {
+    color: #172554;
+}
+
+
+/* =========================================================
+   PLACE ORDER
+========================================================= */
+
+.place-order-section {
+    margin-top: 20px;
+}
+
+.place-order-button {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 17px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.place-order-button:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.disabled-button {
+    background: #94a3b8;
+    cursor: not-allowed;
+}
+
+.secure-note {
+    text-align: center;
+    margin: 12px 0 0;
+    color: #64748b;
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .checkout-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .checkout-right {
+        position: static;
+    }
+
+    .order-summary-card {
+        margin-top: 0;
+    }
+}
+
+
+@media (max-width: 600px) {
+
+    .checkout-page {
+        padding: 25px 14px 60px;
+    }
+
+    .checkout-heading h1 {
+        font-size: 30px;
+    }
+
+    .checkout-section {
+        padding: 20px 16px;
+        border-radius: 14px;
+    }
+
+    .section-heading h2 {
+        font-size: 20px;
+    }
+
+    .coupon-row {
+        flex-direction: column;
+    }
+
+    .coupon-row button {
+        width: 100%;
+    }
+
+    .address-card-top {
+        align-items: flex-start;
+    }
+
+    .upi-qr {
+        width: 190px;
+        height: 190px;
+    }
+
+    .order-summary-card {
+        padding: 18px;
+    }
+}
+</style>
+
+
 <main class="checkout-page">
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
 
     <div class="checkout-heading">
 
@@ -13,11 +759,11 @@
         </p>
 
         <h1>
-            Billing details
+            Complete Your Order
         </h1>
 
         <p>
-            Enter your delivery details to place the order.
+            Select your delivery address and payment method.
         </p>
 
     </div>
@@ -33,18 +779,8 @@
 
             {% for message in messages %}
 
-                <div class="checkout-message {{ message.tags }}">
-
-                    {% if message.tags == "success" %}
-                        ✅
-                    {% elif message.tags == "warning" %}
-                        ⚠️
-                    {% elif message.tags == "error" %}
-                        ❌
-                    {% endif %}
-
+                <div class="message {{ message.tags }}">
                     {{ message }}
-
                 </div>
 
             {% endfor %}
@@ -54,381 +790,790 @@
     {% endif %}
 
 
+    <!-- =====================================================
+         FORM
+    ====================================================== -->
 
-    <section class="checkout-layout">
+    <form
+        method="post"
+        class="checkout-form"
+        id="checkout-form"
+    >
 
+        {% csrf_token %}
 
-        <!-- =================================================
-             BILLING FORM
-        ================================================== -->
-
-        <form method="post" class="billing-form">
-
-            {% csrf_token %}
-
-
-            <!-- FULL NAME -->
-
-            <label for="full_name">
-                Full name
-            </label>
-
-            <input
-                id="full_name"
-                name="full_name"
-                value="{{ user.get_full_name|default:user.username }}"
-                required
-            >
-
-
-            <!-- EMAIL -->
-
-            <label for="email">
-                Email address
-            </label>
-
-            <input
-                id="email"
-                type="email"
-                name="email"
-                value="{{ user.email }}"
-                required
-            >
-
-
-            <!-- PHONE -->
-
-            <label for="phone">
-                Phone number
-            </label>
-
-            <input
-                id="phone"
-                type="tel"
-                name="phone"
-                pattern="[0-9]{10}"
-                maxlength="10"
-                placeholder="10-digit mobile number"
-                required
-            >
-
-
-            <!-- ADDRESS -->
-
-            <label for="address">
-                Delivery address
-            </label>
-
-            <textarea
-                id="address"
-                name="address"
-                rows="4"
-                required
-            ></textarea>
-
-
-            <!-- CITY + PIN -->
-
-            <div class="form-row">
-
-                <div>
-
-                    <label for="city">
-                        City
-                    </label>
-
-                    <input
-                        id="city"
-                        name="city"
-                        required
-                    >
-
-                </div>
-
-
-                <div>
-
-                    <label for="postal_code">
-                        PIN code
-                    </label>
-
-                    <input
-                        id="postal_code"
-                        name="postal_code"
-                        pattern="[0-9]{6}"
-                        maxlength="6"
-                        placeholder="6 digits"
-                        required
-                    >
-
-                </div>
-
-            </div>
-
-
-            <hr>
+        <div class="checkout-layout">
 
 
             <!-- =================================================
-                 COUPON
+                 LEFT SIDE
             ================================================== -->
 
-            <h3>
-                Apply Coupon
-            </h3>
+            <div class="checkout-left">
 
 
-            <div class="coupon-box">
+                <!-- =================================================
+                     DELIVERY ADDRESS
+                ================================================== -->
 
-                <label for="coupon_code">
-                    Coupon Code
-                </label>
+                <section class="checkout-section">
 
+                    <div class="section-heading">
 
-                <input
-                    type="text"
-                    id="coupon_code"
-                    name="coupon_code"
-                    placeholder="Enter Coupon Code"
-                    value="{{ request.POST.coupon_code|default:'' }}"
-                    autocomplete="off"
-                >
-
-
-                <small>
-                    Example: WELCOME100
-                </small>
-
-            </div>
-
-
-            <!-- =================================================
-                 DISCOUNT
-            ================================================== -->
-
-            {% if discount > 0 %}
-
-                <div class="coupon-success">
-
-                    ✅
-
-                    <strong>
-                        Coupon applied successfully!
-                    </strong>
-
-                    <span>
-                        You saved ₹{{ discount }}
-                    </span>
-
-                </div>
-
-            {% endif %}
-
-
-
-            <!-- =================================================
-                 PLACE ORDER
-            ================================================== -->
-
-            <button
-                class="primary-button"
-                type="submit"
-            >
-
-                Place Order — ₹{{ final_total }}
-
-            </button>
-
-        </form>
-
-
-
-        <!-- =================================================
-             ORDER SUMMARY
-        ================================================== -->
-
-        <aside class="order-summary">
-
-            <h2>
-                Your items
-            </h2>
-
-
-            {% for item in items %}
-
-                <p>
-
-                    <span>
-                        {{ item.product.name }}
-                        ×
-                        {{ item.quantity }}
-                    </span>
-
-                    <strong>
-                        ₹{{ item.subtotal }}
-                    </strong>
-
-                </p>
-
-            {% endfor %}
-
-
-            <div class="summary-details">
-
-
-                <!-- SUBTOTAL -->
-
-                <p>
-
-                    <span>
-                        Subtotal
-                    </span>
-
-                    <strong>
-                        ₹{{ total }}
-                    </strong>
-
-                </p>
-
-
-                <!-- DISCOUNT -->
-
-                {% if discount > 0 %}
-
-                    <p class="discount-row">
-
-                        <span>
-                            Discount
+                        <span class="section-number">
+                            1
                         </span>
 
-                        <strong>
-                            -₹{{ discount }}
-                        </strong>
+                        <div>
+                            <h2>Delivery Address</h2>
 
-                    </p>
+                            <p>
+                                Where should we deliver your order?
+                            </p>
+                        </div>
 
-                {% endif %}
+                    </div>
 
 
-                <!-- FINAL TOTAL -->
+                    {% if addresses %}
 
-                <div class="summary-total">
+                        <div class="saved-addresses">
 
-                    <span>
-                        Final Total
-                    </span>
+                            {% for address in addresses %}
 
-                    <strong>
-                        ₹{{ final_total }}
-                    </strong>
+                                <label
+                                    class="saved-address-card {% if selected_address and selected_address.id == address.id %}selected-address{% elif not selected_address and address.is_default %}selected-address{% endif %}"
+                                >
 
-                </div>
+                                    <input
+                                        type="radio"
+                                        name="address_id"
+                                        value="{{ address.id }}"
+                                        {% if selected_address and selected_address.id == address.id %}
+                                            checked
+                                        {% elif not selected_address and address.is_default %}
+                                            checked
+                                        {% endif %}
+                                    >
 
+                                    <div class="address-card-content">
+
+                                        <div class="address-card-top">
+
+                                            <strong>
+                                                {{ address.full_name }}
+                                            </strong>
+
+                                            {% if address.is_default %}
+
+                                                <span class="default-badge">
+                                                    DEFAULT
+                                                </span>
+
+                                            {% endif %}
+
+                                        </div>
+
+                                        <p class="address-phone">
+                                            📞 {{ address.phone }}
+                                        </p>
+
+                                        <p>
+                                            {{ address.house_no }},
+                                            {{ address.street }}
+                                        </p>
+
+                                        {% if address.landmark %}
+
+                                            <p>
+                                                Near {{ address.landmark }}
+                                            </p>
+
+                                        {% endif %}
+
+                                        <p>
+                                            {{ address.city }},
+                                            {{ address.district }}
+                                        </p>
+
+                                        <p>
+                                            {{ address.state }}
+                                            -
+                                            {{ address.pincode }}
+                                        </p>
+
+                                        <div class="address-card-actions">
+
+                                            <a
+                                                href="{% url 'store:address_edit' address.id %}"
+                                                onclick="event.stopPropagation();"
+                                            >
+                                                Edit Address
+                                            </a>
+
+                                        </div>
+
+                                    </div>
+
+                                </label>
+
+                            {% endfor %}
+
+                        </div>
+
+
+                        <div class="add-address-box">
+
+                            <a
+                                href="{% url 'store:address_add' %}"
+                                class="add-address-button"
+                            >
+                                <span class="plus-icon">+</span>
+                                Add New Address
+                            </a>
+
+                        </div>
+
+
+                    {% else %}
+
+                        <div class="no-address-box">
+
+                            <div class="no-address-icon">
+                                📍
+                            </div>
+
+                            <h3>
+                                No saved address
+                            </h3>
+
+                            <p>
+                                Add your delivery address once.
+                                You can use it for future orders.
+                            </p>
+
+                            <a
+                                href="{% url 'store:address_add' %}"
+                                class="primary-button"
+                            >
+                                + Add My Address
+                            </a>
+
+                        </div>
+
+                    {% endif %}
+
+                </section>
+
+
+                <!-- =================================================
+                     CONTACT
+                ================================================== -->
+
+                <section class="checkout-section">
+
+                    <div class="section-heading">
+
+                        <span class="section-number">
+                            2
+                        </span>
+
+                        <div>
+
+                            <h2>
+                                Contact Details
+                            </h2>
+
+                            <p>
+                                We will send your order receipt here.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="email">
+                            Email Address
+                        </label>
+
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            value="{{ request.POST.email|default:user.email }}"
+                            placeholder="Enter your email"
+                            required
+                        >
+
+                    </div>
+
+                </section>
+
+
+                <!-- =================================================
+                     COUPON
+                ================================================== -->
+
+                <section class="checkout-section">
+
+                    <div class="section-heading">
+
+                        <span class="section-number">
+                            3
+                        </span>
+
+                        <div>
+
+                            <h2>
+                                Coupon
+                            </h2>
+
+                            <p>
+                                Have a discount coupon?
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="coupon-row">
+
+                        <input
+                            type="text"
+                            name="coupon_code"
+                            value="{% if coupon %}{{ coupon.code }}{% endif %}"
+                            placeholder="Enter coupon code"
+                        >
+
+                        <button
+                            type="submit"
+                            name="apply_coupon"
+                            value="1"
+                            class="secondary-button"
+                        >
+                            Apply
+                        </button>
+
+                    </div>
+
+                </section>
+
+
+                <!-- =================================================
+                     PAYMENT
+                ================================================== -->
+
+                <section class="checkout-section">
+
+                    <div class="section-heading">
+
+                        <span class="section-number">
+                            4
+                        </span>
+
+                        <div>
+
+                            <h2>
+                                Payment Method
+                            </h2>
+
+                            <p>
+                                Choose how you want to pay.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="payment-options">
+
+                        {% if upi_enabled %}
+
+                            <label class="payment-option">
+
+                                <input
+                                    type="radio"
+                                    name="payment_method"
+                                    value="upi"
+                                    id="payment-upi"
+                                    {% if request.POST.payment_method == "upi" %}
+                                        checked
+                                    {% endif %}
+                                >
+
+                                <div class="payment-option-content">
+
+                                    <strong>
+                                        📱 UPI Payment
+                                    </strong>
+
+                                    <span>
+                                        Google Pay, PhonePe, Paytm or any UPI app.
+                                    </span>
+
+                                </div>
+
+                            </label>
+
+                        {% endif %}
+
+
+                        {% if cod_enabled %}
+
+                            <label class="payment-option">
+
+                                <input
+                                    type="radio"
+                                    name="payment_method"
+                                    value="cod"
+                                    id="payment-cod"
+                                    {% if request.POST.payment_method == "cod" %}
+                                        checked
+                                    {% endif %}
+                                >
+
+                                <div class="payment-option-content">
+
+                                    <strong>
+                                        💵 Cash on Delivery
+                                    </strong>
+
+                                    <span>
+                                        Pay when your order is delivered.
+                                    </span>
+
+                                </div>
+
+                            </label>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- UPI -->
+
+                    {% if upi_enabled %}
+
+                        <div
+                            id="upi-details"
+                            class="upi-details"
+                            style="display:none;"
+                        >
+
+                            <div class="upi-header">
+
+                                <h3>
+                                    Pay using UPI
+                                </h3>
+
+                                <p>
+                                    Pay exactly
+                                    <strong>
+                                        ₹{{ final_total }}
+                                    </strong>
+                                </p>
+
+                            </div>
+
+
+                            {% if qr_code %}
+
+                                <div class="qr-section">
+
+                                    <p>
+                                        Scan this QR code using your UPI app.
+                                    </p>
+
+                                    <img
+                                        src="{{ qr_code.url }}"
+                                        alt="UPI QR Code"
+                                        class="upi-qr"
+                                    >
+
+                                </div>
+
+                            {% endif %}
+
+
+                            {% if upi_id %}
+
+                                <div class="upi-id-box">
+
+                                    <span>
+                                        UPI ID
+                                    </span>
+
+                                    <strong>
+                                        {{ upi_id }}
+                                    </strong>
+
+                                </div>
+
+                            {% endif %}
+
+
+                            {% if payment_instructions %}
+
+                                <div class="payment-instructions">
+
+                                    <strong>
+                                        Payment Instructions
+                                    </strong>
+
+                                    <p>
+                                        {{ payment_instructions }}
+                                    </p>
+
+                                </div>
+
+                            {% endif %}
+
+
+                            <div class="utr-box">
+
+                                <label for="utr_number">
+                                    UTR / Transaction Number
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="utr_number"
+                                    name="utr_number"
+                                    value="{{ request.POST.utr_number }}"
+                                    placeholder="Enter UTR number after payment"
+                                >
+
+                                <small>
+                                    Complete the UPI payment first,
+                                    then enter the UTR number here.
+                                </small>
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+
+                    <!-- COD -->
+
+                    {% if cod_enabled %}
+
+                        <div
+                            id="cod-details"
+                            class="cod-details"
+                            style="display:none;"
+                        >
+
+                            <div class="cod-message">
+
+                                <div class="cod-icon">
+                                    💵
+                                </div>
+
+                                <div>
+
+                                    <h3>
+                                        Cash on Delivery
+                                    </h3>
+
+                                    <p>
+                                        Pay ₹{{ final_total }}
+                                        when your order arrives.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    {% endif %}
+
+                </section>
 
             </div>
 
-        </aside>
 
-    </section>
+            <!-- =================================================
+                 RIGHT SIDE - ORDER SUMMARY
+            ================================================== -->
+
+            <aside class="checkout-right">
+
+                <div class="order-summary-card">
+
+                    <div class="summary-heading">
+
+                        <h2>
+                            🧾 Order Summary
+                        </h2>
+
+                        <span class="item-count">
+                            {{ items|length }} item{{ items|length|pluralize }}
+                        </span>
+
+                    </div>
+
+
+                    <div class="order-items">
+
+                        {% for item in items %}
+
+                            <div class="order-item">
+
+                                <div class="order-item-info">
+
+                                    <strong>
+                                        {{ item.product.name }}
+                                    </strong>
+
+                                    <span>
+                                        Qty: {{ item.quantity }}
+                                    </span>
+
+                                </div>
+
+                                <strong>
+                                    ₹{{ item.subtotal }}
+                                </strong>
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+
+                    <div class="price-summary">
+
+                        <div class="price-row">
+
+                            <span>
+                                Subtotal
+                            </span>
+
+                            <strong>
+                                ₹{{ total }}
+                            </strong>
+
+                        </div>
+
+
+                        {% if discount > 0 %}
+
+                            <div class="price-row discount-row">
+
+                                <span>
+                                    Discount
+                                </span>
+
+                                <strong>
+                                    - ₹{{ discount }}
+                                </strong>
+
+                            </div>
+
+                        {% endif %}
+
+
+                        <div class="price-row total-row">
+
+                            <span>
+                                Total
+                            </span>
+
+                            <strong>
+                                ₹{{ final_total }}
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PLACE ORDER -->
+
+                    <div class="place-order-section">
+
+                        {% if addresses %}
+
+                            <button
+                                type="submit"
+                                class="place-order-button"
+                                id="place-order-button"
+                            >
+                                🛒 Place Order
+                            </button>
+
+                        {% else %}
+
+                            <button
+                                type="button"
+                                class="place-order-button disabled-button"
+                                onclick="alert('Please add a delivery address first.');"
+                            >
+                                Please Add Address
+                            </button>
+
+                        {% endif %}
+
+                        <p class="secure-note">
+                            🔒 Secure & safe checkout
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </aside>
+
+        </div>
+
+    </form>
 
 </main>
 
 
-<!-- =========================================================
-     CHECKOUT PAGE STYLES
-========================================================= -->
+<script>
 
-<style>
+/* =========================================================
+   PAYMENT DISPLAY
+========================================================= */
 
-.checkout-messages {
-    width: 92%;
-    max-width: 1200px;
-    margin: 0 auto 25px auto;
-}
+function showPaymentDetails() {
 
-.checkout-message {
-    padding: 14px 18px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    font-size: 15px;
-    font-weight: 600;
-}
+    const upiDetails =
+        document.getElementById("upi-details");
 
+    const codDetails =
+        document.getElementById("cod-details");
 
-/* SUCCESS */
+    const upiRadio =
+        document.getElementById("payment-upi");
 
-.checkout-message.success {
-    background: #eafaf1;
-    color: #1e8449;
-    border: 1px solid #a9dfbf;
-}
+    const codRadio =
+        document.getElementById("payment-cod");
 
 
-/* WARNING */
+    if (upiDetails) {
 
-.checkout-message.warning {
-    background: #fff8e1;
-    color: #8a6500;
-    border: 1px solid #f1d67a;
-}
+        upiDetails.style.display =
+            upiRadio && upiRadio.checked
+                ? "block"
+                : "none";
 
-
-/* ERROR */
-
-.checkout-message.error {
-    background: #fdecea;
-    color: #c0392b;
-    border: 1px solid #f5b7b1;
-}
-
-
-/* COUPON SUCCESS */
-
-.coupon-success {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-
-    margin-top: 15px;
-    margin-bottom: 20px;
-
-    padding: 14px 16px;
-
-    background: #eafaf1;
-
-    border: 1px solid #a9dfbf;
-
-    border-radius: 8px;
-
-    color: #1e8449;
-}
-
-.coupon-success span {
-    font-size: 14px;
-}
-
-
-/* DISCOUNT SUMMARY */
-
-.discount-row {
-    color: #1e8449;
-}
-
-
-/* MOBILE */
-
-@media (max-width: 700px) {
-
-    .checkout-messages {
-        width: 94%;
     }
 
-    .checkout-message {
-        font-size: 14px;
+
+    if (codDetails) {
+
+        codDetails.style.display =
+            codRadio && codRadio.checked
+                ? "block"
+                : "none";
+
     }
 
 }
 
-</style>
+
+/* =========================================================
+   PAGE LOAD
+========================================================= */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        showPaymentDetails();
+
+
+        /* ADDRESS SELECTION */
+
+        const addressCards =
+            document.querySelectorAll(
+                ".saved-address-card"
+            );
+
+
+        addressCards.forEach(
+            function (card) {
+
+                card.addEventListener(
+                    "click",
+                    function (event) {
+
+                        if (
+                            event.target.tagName === "A"
+                        ) {
+                            return;
+                        }
+
+
+                        addressCards.forEach(
+                            function (item) {
+
+                                item.classList.remove(
+                                    "selected-address"
+                                );
+
+                            }
+                        );
+
+
+                        card.classList.add(
+                            "selected-address"
+                        );
+
+
+                        const radio =
+                            card.querySelector(
+                                'input[type="radio"]'
+                            );
+
+
+                        if (radio) {
+
+                            radio.checked = true;
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+
+        /* PAYMENT RADIO */
+
+        const paymentRadios =
+            document.querySelectorAll(
+                'input[name="payment_method"]'
+            );
+
+
+        paymentRadios.forEach(
+            function (radio) {
+
+                radio.addEventListener(
+                    "change",
+                    showPaymentDetails
+                );
+
+            }
+        );
+
+    }
+);
+
+</script>
 
 {% endblock %}

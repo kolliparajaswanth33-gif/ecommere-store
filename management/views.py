@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import get_user_model
@@ -6,9 +7,20 @@ from django.db.models import Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from store.models import Order, Product, Coupon
+from store.emails import send_order_receipt
 
-from .forms import ProductForm, CouponForm
+from store.models import (
+    Order,
+    Product,
+    Coupon,
+    PaymentSettings,
+)
+
+from .forms import (
+    ProductForm,
+    CouponForm,
+    PaymentSettingsForm,
+)
 
 
 User = get_user_model()
@@ -33,8 +45,15 @@ def management_login(request):
 
     if request.method == "POST":
 
-        username = request.POST.get("username", "").strip()
-        password = request.POST.get("password", "")
+        username = request.POST.get(
+            "username",
+            ""
+        ).strip()
+
+        password = request.POST.get(
+            "password",
+            ""
+        )
 
         if not username or not password:
 
@@ -53,7 +72,10 @@ def management_login(request):
 
             if user is not None and user.is_staff:
 
-                login(request, user)
+                login(
+                    request,
+                    user
+                )
 
                 return redirect(
                     "management:dashboard"
@@ -128,6 +150,10 @@ def dashboard(request):
         .count()
     )
 
+    pending_orders_count = Order.objects.filter(
+        status="pending"
+    ).count()
+
     return render(
         request,
         "management/dashboard.html",
@@ -137,6 +163,7 @@ def dashboard(request):
             "today_revenue": today_revenue,
             "total_products": total_products,
             "total_customers": total_customers,
+            "pending_orders_count": pending_orders_count,
         }
     )
 
@@ -354,8 +381,91 @@ def orders(request):
         request,
         "management/orders.html",
         {
-            "orders": all_orders
+            "orders": all_orders,
+            "page_title": "All Orders",
+            "page_description": (
+                "View and manage all customer orders placed in "
+                "Kubera Kirana Shop."
+            ),
+            "return_to": "orders",
         }
+    )
+
+
+# ============================================================
+# NEW ORDERS (PENDING ONLY)
+# ============================================================
+
+@login_required(login_url="management:login")
+def new_orders(request):
+
+    if not request.user.is_staff:
+        messages.error(request, "You do not have management access.")
+        return redirect("management:login")
+
+    pending_orders = (
+        Order.objects
+        .filter(status="pending")
+        .prefetch_related("items")
+        .order_by("-created_at")
+    )
+
+    return render(
+        request,
+        "management/orders.html",
+        {
+            "orders": pending_orders,
+            "page_title": "New Orders",
+            "page_description": (
+                "Review pending customer orders. Confirmed or cancelled "
+                "orders are removed from this list automatically."
+            ),
+            "return_to": "new_orders",
+            "is_new_orders_page": True,
+        }
+    )
+
+
+# ============================================================
+# DELIVERY WORKLISTS
+# ============================================================
+
+DELIVERY_WORKLISTS = {
+    "confirmed": ("Confirmed Orders", "Orders awaiting packing."),
+    "packed": ("Packed Orders", "Orders ready to be sent for delivery."),
+    "out_for_delivery": ("Out for Delivery", "Orders currently with delivery staff."),
+    "delivered": ("Delivered Orders", "Completed customer deliveries."),
+    "cancelled": ("Cancelled Orders", "Orders cancelled by the customer or staff."),
+}
+
+
+@login_required(login_url="management:login")
+def orders_by_status(request, status):
+
+    if not request.user.is_staff:
+        messages.error(request, "You do not have management access.")
+        return redirect("management:login")
+
+    if status not in DELIVERY_WORKLISTS:
+        messages.error(request, "That order worklist is not available.")
+        return redirect("management:orders")
+
+    page_title, page_description = DELIVERY_WORKLISTS[status]
+    status_orders = (
+        Order.objects.filter(status=status)
+        .prefetch_related("items")
+        .order_by("-created_at")
+    )
+
+    return render(
+        request,
+        "management/orders.html",
+        {
+            "orders": status_orders,
+            "page_title": page_title,
+            "page_description": page_description,
+            "return_to": status,
+        },
     )
 
 
@@ -382,6 +492,15 @@ def update_order_status(request, order_id):
         id=order_id
     )
 
+    return_to = request.POST.get("return_to", "orders")
+
+    def return_to_worklist():
+        if return_to == "new_orders":
+            return redirect("management:new_orders")
+        if return_to in DELIVERY_WORKLISTS:
+            return redirect("management:orders_by_status", status=return_to)
+        return redirect("management:orders")
+
     if request.method != "POST":
 
         messages.error(
@@ -389,23 +508,17 @@ def update_order_status(request, order_id):
             "Invalid request."
         )
 
-        return redirect(
-            "management:orders"
-        )
+        return return_to_worklist()
 
     status = request.POST.get(
         "status",
         ""
-    ).strip()
+    ).strip().lower()
 
-    allowed_statuses = [
-        "Pending",
-        "Confirmed",
-        "Packed",
-        "Shipped",
-        "Delivered",
-        "Cancelled",
-    ]
+    allowed_statuses = {
+        value
+        for value, label in Order.STATUS_CHOICES
+    }
 
     if status not in allowed_statuses:
 
@@ -414,26 +527,88 @@ def update_order_status(request, order_id):
             "Invalid order status."
         )
 
-        return redirect(
-            "management:orders"
-        )
+        return return_to_worklist()
 
-    # IMPORTANT:
-    # This requires Order model to have a "status" field.
+    if not order.can_transition_to(status):
+        messages.error(
+            request,
+            (
+                f"Order #{order.id} cannot move from "
+                f"{order.get_status_display()} directly to "
+                f"{dict(Order.STATUS_CHOICES).get(status, status)}."
+            ),
+        )
+        return return_to_worklist()
+
+    if status == "cancelled":
+        if order.cancel():
+            messages.success(
+                request,
+                f"Order #{order.id} was cancelled and its stock was returned.",
+            )
+        else:
+            messages.error(
+                request,
+                f"Order #{order.id} can no longer be cancelled.",
+            )
+        return return_to_worklist()
+
+    now = timezone.now()
+    was_pending = order.status == "pending"
+    update_fields = ["status"]
+
     order.status = status
 
-    order.save(
-        update_fields=["status"]
-    )
+    if status == "confirmed" and was_pending:
+        order.payment_status = "verified"
+        order.payment_verified_at = now
+        order.confirmed_at = now
+        update_fields.extend(
+            [
+                "payment_status",
+                "payment_verified_at",
+                "confirmed_at",
+            ]
+        )
+
+    order.save(update_fields=update_fields)
+
+    if status == "confirmed" and was_pending:
+        if settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD:
+            try:
+                send_order_receipt(order)
+            except Exception:
+                messages.warning(
+                    request,
+                    (
+                        "Order was confirmed, but the bill email could not "
+                        "be sent. Check the email settings and confirm again "
+                        "to retry."
+                    ),
+                )
+            else:
+                order.bill_sent_at = timezone.now()
+                order.save(update_fields=["bill_sent_at"])
+                messages.success(
+                    request,
+                    f"Order #{order.id} confirmed and bill emailed to the customer.",
+                )
+                return return_to_worklist()
+        else:
+            messages.warning(
+                request,
+                (
+                    "Order was confirmed, but no bill email was sent because "
+                    "email settings are not configured."
+                ),
+            )
 
     messages.success(
         request,
-        f"Order #{order.id} status updated to {status}."
+        f"Order #{order.id} status updated to {order.get_status_display()}."
     )
 
-    return redirect(
-        "management:orders"
-    )
+    return return_to_worklist()
 
 
 # ============================================================
@@ -486,577 +661,6 @@ def add_coupon(request):
         return redirect(
             "management:login"
         )
-
-    if request.method == "POST":
-
-        code = request.POST.get(
-            "code",
-            ""
-        ).strip().upper()
-
-        discount_type = request.POST.get(
-            "discount_type",
-            ""
-        ).strip()
-
-        discount_value = request.POST.get(
-            "discount_value",
-            ""
-        ).strip()
-
-        minimum_order_amount = request.POST.get(
-            "minimum_order_amount",
-            "0"
-        ).strip()
-
-        max_uses = request.POST.get(
-            "max_uses",
-            "0"
-        ).strip()
-
-        start_date = request.POST.get(
-            "start_date",
-            ""
-        ).strip()
-
-        end_date = request.POST.get(
-            "end_date",
-            ""
-        ).strip()
-
-        is_active = request.POST.get(
-            "is_active"
-        ) == "on"
-
-        if not code:
-
-            messages.error(
-                request,
-                "Coupon code is required."
-            )
-
-            return render(
-                request,
-                "management/coupon_form.html",
-                {
-                    "title": "Add Coupon"
-                }
-            )
-
-        if Coupon.objects.filter(
-            code__iexact=code
-        ).exists():
-
-            messages.error(
-                request,
-                "This coupon code already exists."
-            )
-
-            return render(
-                request,
-                "management/coupon_form.html",
-                {
-                    "title": "Add Coupon"
-                }
-            )
-
-        try:
-
-            discount_value = float(
-                discount_value
-            )
-
-            minimum_order_amount = float(
-                minimum_order_amount or 0
-            )
-
-            max_uses = int(
-                max_uses or 0
-            )
-
-        except ValueError:
-
-            messages.error(
-                request,
-                "Please enter valid coupon values."
-            )
-
-            return render(
-                request,
-                "management/coupon_form.html",
-                {
-                    "title": "Add Coupon"
-                }
-            )
-
-        if discount_value <= 0:
-
-            messages.error(
-                request,
-                "Discount value must be greater than 0."
-            )
-
-            return render(
-                request,
-                "management/coupon_form.html",
-                {
-                    "title": "Add Coupon"
-                }
-            )
-
-        if discount_type not in [
-            "flat",
-            "percentage"
-        ]:
-
-            messages.error(
-                request,
-                "Invalid discount type."
-            )
-
-            return render(
-                request,
-                "management/coupon_form.html",
-                {
-                    "title": "Add Coupon"
-                }
-            )
-
-        if (
-            discount_type == "percentage"
-            and discount_value > 100
-        ):
-
-            messages.error(
-                request,
-                "Percentage discount cannot be greater than 100."
-            )
-
-            return render(
-                request,
-                "management/coupon_form.html",
-                {
-                    "title": "Add Coupon"
-                }
-            )
-
-        if not start_date or not end_date:
-
-            messages.error(
-                request,
-                "Please select start and end dates."
-            )
-
-            return render(
-                request,
-                "management/coupon_form.html",
-                {
-                    "title": "Add Coupon"
-                }
-            )
-
-        if end_date < start_date:
-
-            messages.error(
-                request,
-                "End date cannot be before start date."
-            )
-
-            return render(
-                request,
-                "management/coupon_form.html",
-                {
-                    "title": "Add Coupon"
-                }
-            )
-
-        Coupon.objects.create(
-
-            code=code,
-
-            discount_type=discount_type,
-
-            discount_value=discount_value,
-
-            minimum_order_amount=minimum_order_amount,
-
-            max_uses=max_uses,
-
-            start_date=start_date,
-
-            end_date=end_date,
-
-            is_active=is_active
-        )
-
-        messages.success(
-            request,
-            f"Coupon {code} created successfully."
-        )
-
-        return redirect(
-            "management:coupons"
-        )
-
-    return render(
-        request,
-        "management/coupon_form.html",
-        {
-            "title": "Add Coupon"
-        }
-    )
-
-
-# ============================================================
-# EDIT COUPON
-# ============================================================
-
-@login_required(login_url="management:login")
-def edit_coupon(request, coupon_id):
-
-    if not request.user.is_staff:
-
-        messages.error(
-            request,
-            "You do not have management access."
-        )
-
-        return redirect(
-            "management:login"
-        )
-
-    coupon = get_object_or_404(
-        Coupon,
-        id=coupon_id
-    )
-
-    if request.method == "POST":
-
-        code = request.POST.get(
-            "code",
-            ""
-        ).strip().upper()
-
-        discount_type = request.POST.get(
-            "discount_type",
-            ""
-        ).strip()
-
-        discount_value = request.POST.get(
-            "discount_value",
-            ""
-        ).strip()
-
-        minimum_order_amount = request.POST.get(
-            "minimum_order_amount",
-            "0"
-        ).strip()
-
-        max_uses = request.POST.get(
-            "max_uses",
-            "0"
-        ).strip()
-
-        start_date = request.POST.get(
-            "start_date",
-            ""
-        ).strip()
-
-        end_date = request.POST.get(
-            "end_date",
-            ""
-        ).strip()
-
-        is_active = request.POST.get(
-            "is_active"
-        ) == "on"
-
-        if not code:
-
-            messages.error(
-                request,
-                "Coupon code is required."
-            )
-
-            return render(
-                request,
-                "management/coupon_form.html",
-                {
-                    "title": "Edit Coupon",
-                    "coupon": coupon
-                }
-            )
-
-        duplicate = (
-            Coupon.objects
-            .filter(code__iexact=code)
-            .exclude(id=coupon.id)
-            .exists()
-        )
-
-        if duplicate:
-
-            messages.error(
-                request,
-                "Another coupon already uses this code."
-            )
-
-            return render(
-                request,
-                "management/coupon_form.html",
-                {
-                    "title": "Edit Coupon",
-                    "coupon": coupon
-                }
-            )
-
-        try:
-
-            discount_value = float(
-                discount_value
-            )
-
-            minimum_order_amount = float(
-                minimum_order_amount or 0
-            )
-
-            max_uses = int(
-                max_uses or 0
-            )
-
-        except ValueError:
-
-            messages.error(
-                request,
-                "Please enter valid coupon values."
-            )
-
-            return render(
-                request,
-                "management/coupon_form.html",
-                {
-                    "title": "Edit Coupon",
-                    "coupon": coupon
-                }
-            )
-
-        if discount_value <= 0:
-
-            messages.error(
-                request,
-                "Discount value must be greater than 0."
-            )
-
-            return render(
-                request,
-                "management/coupon_form.html",
-                {
-                    "title": "Edit Coupon",
-                    "coupon": coupon
-                }
-            )
-
-        if discount_type not in [
-            "flat",
-            "percentage"
-        ]:
-
-            messages.error(
-                request,
-                "Invalid discount type."
-            )
-
-            return render(
-                request,
-                "management/coupon_form.html",
-                {
-                    "title": "Edit Coupon",
-                    "coupon": coupon
-                }
-            )
-
-        if (
-            discount_type == "percentage"
-            and discount_value > 100
-        ):
-
-            messages.error(
-                request,
-                "Percentage discount cannot be greater than 100."
-            )
-
-            return render(
-                request,
-                "management/coupon_form.html",
-                {
-                    "title": "Edit Coupon",
-                    "coupon": coupon
-                }
-            )
-
-        if not start_date or not end_date:
-
-            messages.error(
-                request,
-                "Please select start and end dates."
-            )
-
-            return render(
-                request,
-                "management/coupon_form.html",
-                {
-                    "title": "Edit Coupon",
-                    "coupon": coupon
-                }
-            )
-
-        if end_date < start_date:
-
-            messages.error(
-                request,
-                "End date cannot be before start date."
-            )
-
-            return render(
-                request,
-                "management/coupon_form.html",
-                {
-                    "title": "Edit Coupon",
-                    "coupon": coupon
-                }
-            )
-
-        coupon.code = code
-
-        coupon.discount_type = discount_type
-
-        coupon.discount_value = discount_value
-
-        coupon.minimum_order_amount = (
-            minimum_order_amount
-        )
-
-        coupon.max_uses = max_uses
-
-        coupon.start_date = start_date
-
-        coupon.end_date = end_date
-
-        coupon.is_active = is_active
-
-        coupon.save()
-
-        messages.success(
-            request,
-            f"Coupon {code} updated successfully."
-        )
-
-        return redirect(
-            "management:coupons"
-        )
-
-    return render(
-        request,
-        "management/coupon_form.html",
-        {
-            "title": "Edit Coupon",
-            "coupon": coupon
-        }
-    )
-
-
-# ============================================================
-# DELETE COUPON
-# ============================================================
-
-@login_required(login_url="management:login")
-def delete_coupon(request, coupon_id):
-
-    if not request.user.is_staff:
-
-        messages.error(
-            request,
-            "You do not have management access."
-        )
-
-        return redirect(
-            "management:login"
-        )
-
-    coupon = get_object_or_404(
-        Coupon,
-        id=coupon_id
-    )
-
-    if request.method == "POST":
-
-        coupon_code = coupon.code
-
-        coupon.delete()
-
-        messages.success(
-            request,
-            f"Coupon {coupon_code} deleted successfully."
-        )
-
-    return redirect(
-        "management:coupons"
-    )
-
-    # ============================================================
-# COUPONS
-# ============================================================
-
-@login_required(login_url="management:login")
-def coupons(request):
-
-    if not request.user.is_staff:
-
-        messages.error(
-            request,
-            "You do not have management access."
-        )
-
-        return redirect(
-            "management:login"
-        )
-
-    all_coupons = (
-        Coupon.objects
-        .all()
-        .order_by("-created_at")
-    )
-
-    return render(
-        request,
-        "management/coupons.html",
-        {
-            "coupons": all_coupons
-        }
-    )
-
-
-# ============================================================
-# ADD COUPON
-# ============================================================
-
-@login_required(login_url="management:login")
-def add_coupon(request):
-
-    if not request.user.is_staff:
-
-        messages.error(
-            request,
-            "You do not have management access."
-        )
-
-        return redirect(
-            "management:login"
-        )
-
-    # --------------------------------------------------------
-    # POST
-    # --------------------------------------------------------
 
     if request.method == "POST":
 
@@ -1076,10 +680,6 @@ def add_coupon(request):
             return redirect(
                 "management:coupons"
             )
-
-    # --------------------------------------------------------
-    # GET
-    # --------------------------------------------------------
 
     else:
 
@@ -1118,10 +718,6 @@ def edit_coupon(request, coupon_id):
         id=coupon_id
     )
 
-    # --------------------------------------------------------
-    # POST
-    # --------------------------------------------------------
-
     if request.method == "POST":
 
         form = CouponForm(
@@ -1141,10 +737,6 @@ def edit_coupon(request, coupon_id):
             return redirect(
                 "management:coupons"
             )
-
-    # --------------------------------------------------------
-    # GET
-    # --------------------------------------------------------
 
     else:
 
@@ -1199,4 +791,67 @@ def delete_coupon(request, coupon_id):
 
     return redirect(
         "management:coupons"
+    )
+
+
+# ============================================================
+# PAYMENT SETTINGS
+# ============================================================
+
+@login_required(login_url="management:login")
+def payment_settings(request):
+
+    if not has_management_access(request.user):
+
+        messages.error(
+            request,
+            "You do not have management access."
+        )
+
+        return redirect(
+            "management:login"
+        )
+
+    # Get the existing settings.
+    # If there is no record yet, create one.
+    payment_settings, created = (
+        PaymentSettings.objects.get_or_create(
+            id=1
+        )
+    )
+
+    if request.method == "POST":
+
+        form = PaymentSettingsForm(
+            request.POST,
+            request.FILES,
+            instance=payment_settings
+        )
+
+        if form.is_valid():
+
+            form.save()
+
+            messages.success(
+                request,
+                "Payment settings updated successfully."
+            )
+
+            return redirect(
+                "management:payment_settings"
+            )
+
+    else:
+
+        form = PaymentSettingsForm(
+            instance=payment_settings
+        )
+
+    return render(
+        request,
+        "management/payment_settings.html",
+        {
+            "form": form,
+            "payment_settings": payment_settings,
+        }
     )

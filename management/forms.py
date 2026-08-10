@@ -1,6 +1,6 @@
 from django import forms
 
-from store.models import Product, Coupon
+from store.models import Product, Coupon, PaymentSettings
 
 
 # ============================================================
@@ -178,6 +178,7 @@ class CouponForm(forms.ModelForm):
         code = self.cleaned_data.get("code")
 
         if not code:
+
             raise forms.ValidationError(
                 "Coupon code is required."
             )
@@ -185,7 +186,7 @@ class CouponForm(forms.ModelForm):
         return code.strip().upper()
 
     # --------------------------------------------------------
-    # FORM VALIDATION
+    # COUPON VALIDATION
     # --------------------------------------------------------
 
     def clean(self):
@@ -216,10 +217,7 @@ class CouponForm(forms.ModelForm):
             "end_date"
         )
 
-        # ----------------------------------------------------
-        # DISCOUNT VALUE
-        # ----------------------------------------------------
-
+        # Discount value
         if discount_value is not None:
 
             if discount_value <= 0:
@@ -228,10 +226,7 @@ class CouponForm(forms.ModelForm):
                     "Discount value must be greater than 0."
                 )
 
-        # ----------------------------------------------------
-        # PERCENTAGE DISCOUNT
-        # ----------------------------------------------------
-
+        # Percentage discount
         if (
             discount_type == "percentage"
             and discount_value is not None
@@ -243,10 +238,7 @@ class CouponForm(forms.ModelForm):
                     "Percentage discount cannot be greater than 100%."
                 )
 
-        # ----------------------------------------------------
-        # MINIMUM ORDER
-        # ----------------------------------------------------
-
+        # Minimum order amount
         if minimum_order_amount is not None:
 
             if minimum_order_amount < 0:
@@ -255,10 +247,7 @@ class CouponForm(forms.ModelForm):
                     "Minimum order amount cannot be negative."
                 )
 
-        # ----------------------------------------------------
-        # MAX USES
-        # ----------------------------------------------------
-
+        # Maximum uses
         if max_uses is not None:
 
             if max_uses < 0:
@@ -267,10 +256,7 @@ class CouponForm(forms.ModelForm):
                     "Maximum uses cannot be negative."
                 )
 
-        # ----------------------------------------------------
-        # DATE VALIDATION
-        # ----------------------------------------------------
-
+        # Date validation
         if start_date and end_date:
 
             if end_date < start_date:
@@ -280,3 +266,50 @@ class CouponForm(forms.ModelForm):
                 )
 
         return cleaned_data
+
+
+# ============================================================
+# PAYMENT SETTINGS FORM
+# ============================================================
+
+class PaymentSettingsForm(forms.ModelForm):
+
+    class Meta:
+
+        model = PaymentSettings
+
+        fields = [
+            "upi_id",
+            "qr_code",
+            "upi_enabled",
+            "cod_enabled",
+            "payment_instructions",
+        ]
+
+        widgets = {
+
+            "upi_id": forms.TextInput(
+                attrs={
+                    "placeholder": "example@upi"
+                }
+            ),
+
+            "qr_code": forms.ClearableFileInput(
+                attrs={
+                    "accept": "image/*"
+                }
+            ),
+
+            "upi_enabled": forms.CheckboxInput(),
+
+            "cod_enabled": forms.CheckboxInput(),
+
+            "payment_instructions": forms.Textarea(
+                attrs={
+                    "rows": 4,
+                    "placeholder": (
+                        "Enter payment instructions..."
+                    )
+                }
+            ),
+        }

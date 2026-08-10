@@ -8,19 +8,9 @@ app_name = "management"
 
 urlpatterns = [
 
-    # ============================
-    # DASHBOARD
-    # ============================
-
-    path(
-        "",
-        views.dashboard,
-        name="dashboard"
-    ),
-
-    # ============================
-    # LOGIN
-    # ============================
+    # ========================================================
+    # LOGIN / LOGOUT
+    # ========================================================
 
     path(
         "login/",
@@ -28,19 +18,25 @@ urlpatterns = [
         name="login"
     ),
 
-    # ============================
-    # LOGOUT
-    # ============================
-
     path(
         "logout/",
         views.management_logout,
         name="logout"
     ),
 
-    # ============================
+    # ========================================================
+    # DASHBOARD
+    # ========================================================
+
+    path(
+        "",
+        views.dashboard,
+        name="dashboard"
+    ),
+
+    # ========================================================
     # PRODUCTS
-    # ============================
+    # ========================================================
 
     path(
         "products/",
@@ -55,20 +51,20 @@ urlpatterns = [
     ),
 
     path(
-        "products/edit/<int:product_id>/",
+        "products/<int:product_id>/edit/",
         views.edit_product,
         name="edit_product"
     ),
 
     path(
-        "products/delete/<int:product_id>/",
+        "products/<int:product_id>/delete/",
         views.delete_product,
         name="delete_product"
     ),
 
-    # ============================
+    # ========================================================
     # ORDERS
-    # ============================
+    # ========================================================
 
     path(
         "orders/",
@@ -76,38 +72,59 @@ urlpatterns = [
         name="orders"
     ),
 
+    path(
+        "new-orders/",
+        views.new_orders,
+        name="new_orders"
+    ),
 
     path(
-    "orders/<int:order_id>/status/",
-    views.update_order_status,
-    name="update_order_status"
-),
+        "orders/status/<str:status>/",
+        views.orders_by_status,
+        name="orders_by_status"
+    ),
 
-# ============================
-# COUPONS
-# ============================
+    path(
+        "orders/<int:order_id>/status/",
+        views.update_order_status,
+        name="update_order_status"
+    ),
 
-path(
-    "coupons/",
-    views.coupons,
-    name="coupons"
-),
+    # ========================================================
+    # COUPONS
+    # ========================================================
 
-path(
-    "coupons/add/",
-    views.add_coupon,
-    name="add_coupon"
-),
+    path(
+        "coupons/",
+        views.coupons,
+        name="coupons"
+    ),
 
-path(
-    "coupons/edit/<int:coupon_id>/",
-    views.edit_coupon,
-    name="edit_coupon"
-),
+    path(
+        "coupons/add/",
+        views.add_coupon,
+        name="add_coupon"
+    ),
 
-path(
-    "coupons/delete/<int:coupon_id>/",
-    views.delete_coupon,
-    name="delete_coupon"
-),
+    path(
+        "coupons/<int:coupon_id>/edit/",
+        views.edit_coupon,
+        name="edit_coupon"
+    ),
+
+    path(
+        "coupons/<int:coupon_id>/delete/",
+        views.delete_coupon,
+        name="delete_coupon"
+    ),
+
+    # ========================================================
+    # PAYMENT SETTINGS
+    # ========================================================
+
+    path(
+        "payment-settings/",
+        views.payment_settings,
+        name="payment_settings"
+    ),
 ]

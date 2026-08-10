@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
+from django.db.models import F
 
 
 # =========================================================
@@ -40,7 +41,7 @@ class Product(models.Model):
 
     def clean(self):
 
-        # Must choose exactly one:
+        # Customer must choose exactly one:
         # Upload Image OR Image URL
 
         if bool(self.image) == bool(self.image_url):
@@ -66,9 +67,24 @@ class Product(models.Model):
 
 class Order(models.Model):
 
-    # -----------------------------------------------------
-    # ORDER STATUS
-    # -----------------------------------------------------
+    DELIVERY_TRANSITIONS = {
+        "pending": {"confirmed", "cancelled"},
+        "confirmed": {"packed"},
+        "packed": {"out_for_delivery"},
+        "out_for_delivery": {"delivered"},
+        "delivered": set(),
+        "cancelled": set(),
+    }
+
+    PAYMENT_METHOD_CHOICES = [
+        ("upi", "UPI"),
+        ("cod", "Cash on Delivery"),
+    ]
+
+    PAYMENT_STATUS_CHOICES = [
+        ("pending", "Pending verification"),
+        ("verified", "Verified"),
+    ]
 
     STATUS_CHOICES = [
 
@@ -149,6 +165,43 @@ class Order(models.Model):
     )
 
     # -----------------------------------------------------
+    # PAYMENT
+    # -----------------------------------------------------
+
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHOD_CHOICES,
+        blank=True,
+        default="",
+    )
+
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PAYMENT_STATUS_CHOICES,
+        default="pending",
+    )
+
+    utr_number = models.CharField(
+        max_length=100,
+        blank=True,
+    )
+
+    payment_verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    confirmed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    bill_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    # -----------------------------------------------------
     # ORDER STATUS
     # -----------------------------------------------------
 
@@ -178,6 +231,34 @@ class Order(models.Model):
             f"Order #{self.pk} - "
             f"{self.full_name}"
         )
+
+    def can_transition_to(self, status):
+        """Return whether status is the next permitted workflow state."""
+        return status in self.DELIVERY_TRANSITIONS.get(self.status, set())
+
+    def next_status(self):
+        """Return the next non-cancellation status in the delivery workflow."""
+        next_steps = self.DELIVERY_TRANSITIONS.get(self.status, set())
+        return next(iter(next_steps - {"cancelled"}), None)
+
+    def cancel(self):
+        """Cancel a pending order once and return its reserved stock."""
+        with transaction.atomic():
+            order = Order.objects.select_for_update().get(pk=self.pk)
+
+            if not order.can_transition_to("cancelled"):
+                return False
+
+            for item in order.items.all():
+                Product.objects.filter(pk=item.product_id).update(
+                    stock=F("stock") + item.quantity
+                )
+
+            order.status = "cancelled"
+            order.save(update_fields=["status"])
+
+        self.status = "cancelled"
+        return True
 
 
 # =========================================================
@@ -352,3 +433,62 @@ class Address(models.Model):
             f"{self.full_name} - "
             f"{self.city}"
         )
+
+
+# =========================================================
+# PAYMENT SETTINGS
+# =========================================================
+
+class PaymentSettings(models.Model):
+
+    # -----------------------------------------------------
+    # UPI ID
+    # -----------------------------------------------------
+
+    upi_id = models.CharField(
+        max_length=100,
+        blank=True
+    )
+
+    # -----------------------------------------------------
+    # UPI QR CODE
+    # -----------------------------------------------------
+
+    qr_code = models.ImageField(
+        upload_to="payment/",
+        blank=True,
+        null=True
+    )
+
+    # -----------------------------------------------------
+    # PAYMENT OPTIONS
+    # -----------------------------------------------------
+
+    upi_enabled = models.BooleanField(
+        default=True
+    )
+
+    cod_enabled = models.BooleanField(
+        default=True
+    )
+
+    # -----------------------------------------------------
+    # PAYMENT INSTRUCTIONS
+    # -----------------------------------------------------
+
+    payment_instructions = models.TextField(
+        blank=True,
+        default="Pay the exact amount shown above."
+    )
+
+    # -----------------------------------------------------
+    # LAST UPDATED
+    # -----------------------------------------------------
+
+    updated_at = models.DateTimeField(
+        auto_now=True
+    )
+
+    def __str__(self):
+
+        return "Payment Settings"

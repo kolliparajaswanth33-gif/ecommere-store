@@ -13,133 +13,442 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+import dj_database_url
+
+from django.core.exceptions import ImproperlyConfigured
+
+# ============================================================
+# BASE DIRECTORY
+# ============================================================
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
+# ============================================================
+# SECURITY / DEBUG
+# ============================================================
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-3h%z8t&5odqal!#(zpmxoi!*na@u^t5_qiarv%q9byigp16t04'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['*']
+DEBUG = os.environ.get(
+    "DJANGO_DEBUG",
+    "False" if os.environ.get("RENDER") else "True",
+).lower() in ("1", "true", "yes")
 
 
-# Application definition
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    "",
+)
+
+
+if not SECRET_KEY:
+
+    if DEBUG:
+
+        SECRET_KEY = (
+            "django-insecure-local-development-key-"
+            "change-before-production"
+        )
+
+    else:
+
+        raise ImproperlyConfigured(
+            "DJANGO_SECRET_KEY must be set "
+            "when DJANGO_DEBUG is False."
+        )
+
+
+# ============================================================
+# ALLOWED HOSTS
+# ============================================================
+
+render_hostname = os.environ.get(
+    "RENDER_EXTERNAL_HOSTNAME",
+    "",
+)
+
+
+configured_hosts = os.environ.get(
+    "DJANGO_ALLOWED_HOSTS",
+    "",
+)
+
+
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+]
+
+
+ALLOWED_HOSTS += [
+    host.strip()
+    for host in configured_hosts.split(",")
+    if host.strip()
+]
+
+
+if render_hostname:
+
+    ALLOWED_HOSTS.append(
+        render_hostname
+    )
+
+
+# ============================================================
+# CSRF TRUSTED ORIGINS
+# ============================================================
+
+configured_csrf_origins = os.environ.get(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    "",
+)
+
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in configured_csrf_origins.split(",")
+    if origin.strip()
+]
+
+
+if render_hostname:
+
+    CSRF_TRUSTED_ORIGINS.append(
+        f"https://{render_hostname}"
+    )
+
+
+# ============================================================
+# APPLICATIONS
+# ============================================================
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
 
-    'store',
-    'management',
+    # Django applications
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+
+    # Project applications
+    "store",
+    "management",
 ]
+
+
+# ============================================================
+# MIDDLEWARE
+# ============================================================
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',    
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    "django.middleware.security.SecurityMiddleware",
+
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+
+    "django.contrib.sessions.middleware.SessionMiddleware",
+
+    "django.middleware.common.CommonMiddleware",
+
+    "django.middleware.csrf.CsrfViewMiddleware",
+
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+
+    "django.contrib.messages.middleware.MessageMiddleware",
+
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'ecommerce_store.urls'
+
+# ============================================================
+# URL CONFIGURATION
+# ============================================================
+
+ROOT_URLCONF = "ecommerce_store.urls"
+
+
+# ============================================================
+# TEMPLATES
+# ============================================================
 
 TEMPLATES = [
+
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-                'store.context_processors.cart_data',
+        "BACKEND":
+            "django.template.backends.django.DjangoTemplates",
+
+        "DIRS": [
+            BASE_DIR / "templates"
+        ],
+
+        "APP_DIRS": True,
+
+        "OPTIONS": {
+
+            "context_processors": [
+
+                "django.template.context_processors.request",
+
+                "django.contrib.auth.context_processors.auth",
+
+                "django.contrib.messages.context_processors.messages",
+
+                "store.context_processors.cart_data",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'ecommerce_store.wsgi.application'
+
+# ============================================================
+# WSGI
+# ============================================================
+
+WSGI_APPLICATION = "ecommerce_store.wsgi.application"
 
 
-# Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+# ============================================================
+# DATABASE
+# ============================================================
+#
+# LOCAL COMPUTER
+#   -> SQLite
+#
+# RENDER
+#   -> PostgreSQL using DATABASE_URL
+#
+# ============================================================
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+
+if DATABASE_URL:
+
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=not DEBUG,
+        )
     }
-}
+
+else:
+
+    DATABASES = {
+
+        "default": {
+
+            "ENGINE":
+                "django.db.backends.sqlite3",
+
+            "NAME":
+                BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
-# Password validation
-# https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
+# ============================================================
+# PASSWORD VALIDATION
+# ============================================================
 
 AUTH_PASSWORD_VALIDATORS = [
+
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME":
+            "django.contrib.auth.password_validation."
+            "UserAttributeSimilarityValidator",
     },
+
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME":
+            "django.contrib.auth.password_validation."
+            "MinimumLengthValidator",
     },
+
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME":
+            "django.contrib.auth.password_validation."
+            "CommonPasswordValidator",
     },
+
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME":
+            "django.contrib.auth.password_validation."
+            "NumericPasswordValidator",
     },
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/6.0/topics/i18n/
+# ============================================================
+# INTERNATIONALIZATION
+# ============================================================
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/6.0/howto/static-files/
+# ============================================================
+# STATIC FILES
+# ============================================================
 
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_URL = "static/"
 
-LOGIN_REDIRECT_URL = 'store:home'
-LOGOUT_REDIRECT_URL = 'store:home'
+STATICFILES_DIRS = [
+    BASE_DIR / "static"
+]
 
-# Gmail settings: set these values as Windows environment variables, not in code.
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
+STATIC_ROOT = (
+    BASE_DIR / "staticfiles"
+)
+
+
+# ============================================================
+# STORAGE
+#
+# IMPORTANT:
+# Django requires a "default" storage.
+#
+# "default" -> uploaded media/product images
+# "staticfiles" -> CSS, JS and static files
+# ============================================================
+
+STORAGES = {
+
+    # --------------------------------------------------------
+    # DEFAULT STORAGE
+    #
+    # Used by:
+    # ImageField
+    # FileField
+    # Uploaded product images
+    # Uploaded QR code
+    # Other media files
+    # --------------------------------------------------------
+
+    "default": {
+
+        "BACKEND":
+            "django.core.files.storage.FileSystemStorage",
+    },
+
+
+    # --------------------------------------------------------
+    # STATIC FILE STORAGE
+    # --------------------------------------------------------
+
+    "staticfiles": {
+
+        "BACKEND": (
+
+            "django.contrib.staticfiles.storage."
+            "StaticFilesStorage"
+
+            if DEBUG
+
+            else
+
+            "whitenoise.storage."
+            "CompressedManifestStaticFilesStorage"
+        ),
+    },
+}
+
+
+# ============================================================
+# MEDIA FILES
+#
+# Uploaded files are stored inside:
+#
+# ecommerce_store/
+#     media/
+#         products/
+#
+# ============================================================
+
+MEDIA_URL = "/media/"
+
+MEDIA_ROOT = (
+    BASE_DIR / "media"
+)
+
+
+# ============================================================
+# AUTHENTICATION
+# ============================================================
+
+LOGIN_URL = "store:login"
+
+LOGIN_REDIRECT_URL = "store:home"
+
+LOGOUT_REDIRECT_URL = "store:login"
+
+
+# ============================================================
+# EMAIL / GMAIL
+# ============================================================
+#
+# These values should be stored as environment variables.
+#
+# Windows:
+#
+# KIRANA_GMAIL_ADDRESS
+# KIRANA_GMAIL_APP_PASSWORD
+#
+# ============================================================
+
+EMAIL_BACKEND = (
+    "django.core.mail.backends.smtp.EmailBackend"
+)
+
+EMAIL_HOST = "smtp.gmail.com"
+
 EMAIL_PORT = 587
+
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.environ.get('KIRANA_GMAIL_ADDRESS', '')
-EMAIL_HOST_PASSWORD = os.environ.get('KIRANA_GMAIL_APP_PASSWORD', '')
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Media Files (Uploaded Images)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
 
-LOGIN_URL = 'store:login'
-LOGIN_REDIRECT_URL = 'store:home'
-LOGOUT_REDIRECT_URL = 'store:login'
+EMAIL_HOST_USER = os.environ.get(
+    "KIRANA_GMAIL_ADDRESS",
+    "",
+)
+
+
+EMAIL_HOST_PASSWORD = os.environ.get(
+    "KIRANA_GMAIL_APP_PASSWORD",
+    "",
+)
+
+
+DEFAULT_FROM_EMAIL = (
+    EMAIL_HOST_USER
+)
+
+
+# ============================================================
+# PRODUCTION / RENDER SECURITY
+# ============================================================
+
+if not DEBUG:
+
+    SECURE_PROXY_SSL_HEADER = (
+        "HTTP_X_FORWARDED_PROTO",
+        "https",
+    )
+
+    SECURE_SSL_REDIRECT = True
+
+    SESSION_COOKIE_SECURE = True
+
+    CSRF_COOKIE_SECURE = True
+
+    SECURE_HSTS_SECONDS = 31536000
+
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+
+    SECURE_HSTS_PRELOAD = True

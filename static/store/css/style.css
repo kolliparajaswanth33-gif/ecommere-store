@@ -679,3 +679,124 @@ main {
 .logout-btn:hover {
     background: #c0392b;
 }
+
+.orders-page {
+    width: min(900px, 92%);
+    margin: 42px auto;
+}
+
+.orders-card {
+    padding: 32px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, .08);
+}
+
+.customer-order-list {
+    display: grid;
+    gap: 14px;
+    margin: 28px 0;
+}
+
+.customer-order {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+}
+
+.customer-order h2,
+.order-details-grid h2 {
+    margin: 0 0 8px;
+    font-size: 1.1rem;
+}
+
+.customer-order p,
+.order-details-grid p {
+    margin: 5px 0;
+    color: #475569;
+}
+
+.customer-order-actions {
+    display: grid;
+    gap: 10px;
+    justify-items: end;
+}
+
+.status-pill {
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: .85rem;
+    font-weight: 700;
+}
+
+.status-confirmed,
+.status-delivered {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.secondary-button {
+    display: inline-block;
+    padding: 10px 14px;
+    border: 1px solid #2563eb;
+    border-radius: 8px;
+    color: #1d4ed8;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.danger-button {
+    padding: 10px 14px;
+    border: 1px solid #dc2626;
+    border-radius: 8px;
+    background: #fff;
+    color: #b91c1c;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.danger-button:hover {
+    background: #fef2f2;
+}
+
+.order-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.order-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    margin: 28px 0;
+}
+
+@media (max-width: 700px) {
+    .orders-card {
+        padding: 24px 18px;
+    }
+
+    .customer-order,
+    .order-details-grid {
+        grid-template-columns: 1fr;
+        display: grid;
+    }
+
+    .customer-order-actions {
+        justify-items: start;
+    }
+}

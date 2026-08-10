@@ -2,7 +2,6 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.conf import settings
 from django.db import transaction
 from django.db.models import Sum
 from django.http import HttpResponseBadRequest
@@ -10,9 +9,15 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from .cart import cart_total, get_cart
-from .emails import send_order_receipt
-from .forms import RegisterForm
-from .models import Address, Coupon, Order, OrderItem, Product
+from .forms import RegisterForm, AddressForm
+from .models import (
+    Address,
+    Coupon,
+    Order,
+    OrderItem,
+    Product,
+    PaymentSettings,
+)
 
 
 # ============================================================
@@ -29,7 +34,7 @@ def home(request):
         "store/home.html",
         {
             "products": products,
-        }
+        },
     )
 
 
@@ -41,7 +46,7 @@ def product_detail(request, product_id):
 
     product = get_object_or_404(
         Product,
-        id=product_id
+        id=product_id,
     )
 
     return render(
@@ -49,7 +54,7 @@ def product_detail(request, product_id):
         "store/product_detail.html",
         {
             "product": product,
-        }
+        },
     )
 
 
@@ -59,6 +64,9 @@ def product_detail(request, product_id):
 
 def register(request):
 
+    if request.user.is_authenticated:
+        return redirect("store:home")
+
     if request.method == "POST":
 
         form = RegisterForm(request.POST)
@@ -67,14 +75,14 @@ def register(request):
 
             user = form.save()
 
-            login(
+            login(request, user)
+
+            messages.success(
                 request,
-                user
+                "Registration successful. Welcome!",
             )
 
-            return redirect(
-                "store:home"
-            )
+            return redirect("store:home")
 
     else:
 
@@ -85,8 +93,78 @@ def register(request):
         "store/register.html",
         {
             "form": form,
-        }
+        },
     )
+
+
+# ============================================================
+# LOGIN
+# ============================================================
+
+def login_view(request):
+
+    if request.user.is_authenticated:
+        return redirect("store:home")
+
+    if request.method == "POST":
+
+        username = request.POST.get(
+            "username",
+            "",
+        ).strip()
+
+        password = request.POST.get(
+            "password",
+            "",
+        )
+
+        user = authenticate(
+            request,
+            username=username,
+            password=password,
+        )
+
+        if user is not None:
+
+            login(request, user)
+
+            messages.success(
+                request,
+                "Login successful.",
+            )
+
+            return redirect("store:home")
+
+        messages.error(
+            request,
+            "Invalid username or password.",
+        )
+
+    return render(
+        request,
+        "store/login.html",
+    )
+
+
+# ============================================================
+# LOGOUT
+# ============================================================
+
+@login_required(login_url="store:login")
+def logout_view(request):
+
+    if request.method == "POST":
+
+        logout(request)
+
+        messages.success(
+            request,
+            "You have been logged out successfully.",
+        )
+
+        return redirect("store:login")
+
+    return redirect("store:home")
 
 
 # ============================================================
@@ -95,9 +173,10 @@ def register(request):
 
 def _cart_items(request):
 
-    cart = get_cart(
-        request.session
-    )
+    cart = get_cart(request.session)
+
+    if not cart:
+        return []
 
     products = Product.objects.filter(
         id__in=cart.keys()
@@ -109,7 +188,7 @@ def _cart_items(request):
 
         quantity = cart.get(
             str(product.id),
-            0
+            0,
         )
 
         if quantity > 0:
@@ -134,50 +213,56 @@ def add_to_cart(request, product_id):
     if request.method != "POST":
 
         return HttpResponseBadRequest(
-            "Use the add-to-cart button."
+            "Use the Add to Cart button."
         )
 
     product = get_object_or_404(
         Product,
-        id=product_id
+        id=product_id,
     )
 
     if product.stock <= 0:
 
         messages.error(
             request,
-            f"{product.name} is out of stock."
+            f"{product.name} is out of stock.",
         )
 
         return redirect(
             "store:product_detail",
-            product_id=product.id
+            product_id=product.id,
         )
 
-    cart = get_cart(
-        request.session
-    )
+    cart = get_cart(request.session)
 
-    product_id = str(
-        product.id
-    )
+    product_key = str(product.id)
 
     current_quantity = cart.get(
-        product_id,
-        0
+        product_key,
+        0,
     )
 
-    cart[product_id] = min(
-        current_quantity + 1,
-        product.stock
-    )
+    if current_quantity >= product.stock:
 
-    request.session["cart"] = cart
-    request.session.modified = True
+        messages.warning(
+            request,
+            f"Only {product.stock} units of "
+            f"{product.name} are available.",
+        )
 
-    return redirect(
-        "store:cart"
-    )
+    else:
+
+        cart[product_key] = current_quantity + 1
+
+        request.session["cart"] = cart
+        request.session.modified = True
+
+        messages.success(
+            request,
+            f"{product.name} added to cart.",
+        )
+
+    return redirect("store:cart")
 
 
 # ============================================================
@@ -189,39 +274,33 @@ def buy_now(request, product_id):
     if request.method != "POST":
 
         return HttpResponseBadRequest(
-            "Use the buy-now button."
+            "Use the Buy Now button."
         )
 
     product = get_object_or_404(
         Product,
-        id=product_id
+        id=product_id,
     )
 
     if product.stock <= 0:
 
         messages.error(
             request,
-            "This product is out of stock."
+            "This product is out of stock.",
         )
 
         return redirect(
             "store:product_detail",
-            product_id=product.id
+            product_id=product.id,
         )
 
-    # Clear existing cart.
-    # Buy Now should contain ONLY this product.
+    request.session["cart"] = {
+        str(product.id): 1,
+    }
 
-    cart = {}
-
-    cart[str(product.id)] = 1
-
-    request.session["cart"] = cart
     request.session.modified = True
 
-    return redirect(
-        "store:checkout"
-    )
+    return redirect("store:checkout")
 
 
 # ============================================================
@@ -230,13 +309,9 @@ def buy_now(request, product_id):
 
 def cart_view(request):
 
-    items = _cart_items(
-        request
-    )
+    items = _cart_items(request)
 
-    total = cart_total(
-        items
-    )
+    total = cart_total(items)
 
     return render(
         request,
@@ -244,7 +319,7 @@ def cart_view(request):
         {
             "items": items,
             "total": total,
-        }
+        },
     )
 
 
@@ -262,19 +337,19 @@ def update_cart(request, product_id):
 
     product = get_object_or_404(
         Product,
-        id=product_id
+        id=product_id,
     )
 
-    cart = get_cart(
-        request.session
-    )
+    cart = get_cart(request.session)
+
+    product_key = str(product.id)
 
     try:
 
         quantity = int(
             request.POST.get(
                 "quantity",
-                1
+                1,
             )
         )
 
@@ -285,36 +360,397 @@ def update_cart(request, product_id):
     if quantity <= 0:
 
         cart.pop(
-            str(product.id),
-            None
+            product_key,
+            None,
+        )
+
+    elif product.stock <= 0:
+
+        cart.pop(
+            product_key,
+            None,
+        )
+
+        messages.error(
+            request,
+            f"{product.name} is out of stock.",
         )
 
     else:
 
-        if product.stock <= 0:
+        if quantity > product.stock:
 
-            cart.pop(
-                str(product.id),
-                None
-            )
+            quantity = product.stock
 
-            messages.error(
+            messages.warning(
                 request,
-                f"{product.name} is out of stock."
+                f"Only {product.stock} units "
+                f"are available.",
             )
 
-        else:
-
-            cart[str(product.id)] = min(
-                quantity,
-                product.stock
-            )
+        cart[product_key] = quantity
 
     request.session["cart"] = cart
     request.session.modified = True
 
+    return redirect("store:cart")
+
+
+# ============================================================
+# PAYMENT SETTINGS
+# ============================================================
+
+def get_payment_settings():
+
+    payment_settings = (
+        PaymentSettings.objects
+        .filter(id=1)
+        .first()
+    )
+
+    if payment_settings is None:
+
+        payment_settings = PaymentSettings.objects.create(
+            id=1
+        )
+
+    return payment_settings
+
+
+# ============================================================
+# COUPON CALCULATION
+# ============================================================
+
+def calculate_coupon_discount(
+    coupon_code,
+    total,
+):
+
+    discount = 0
+    coupon = None
+    message = None
+
+    if not coupon_code:
+
+        return coupon, discount, message
+
+    try:
+
+        coupon = Coupon.objects.get(
+            code__iexact=coupon_code
+        )
+
+    except Coupon.DoesNotExist:
+
+        return (
+            None,
+            0,
+            "Invalid coupon code.",
+        )
+
+    today = timezone.localdate()
+
+    if not coupon.is_active:
+
+        return (
+            None,
+            0,
+            "This coupon is inactive.",
+        )
+
+    if today < coupon.start_date:
+
+        return (
+            None,
+            0,
+            "This coupon is not active yet.",
+        )
+
+    if today > coupon.end_date:
+
+        return (
+            None,
+            0,
+            "This coupon has expired.",
+        )
+
+    if (
+        coupon.max_uses > 0
+        and coupon.used_count >= coupon.max_uses
+    ):
+
+        return (
+            None,
+            0,
+            "This coupon has reached its usage limit.",
+        )
+
+    if total < coupon.minimum_order_amount:
+
+        return (
+            None,
+            0,
+            (
+                f"This coupon requires a minimum "
+                f"order of ₹{coupon.minimum_order_amount}."
+            ),
+        )
+
+    if coupon.discount_type == "flat":
+
+        discount = coupon.discount_value
+
+    elif coupon.discount_type == "percentage":
+
+        discount = (
+            total
+            * coupon.discount_value
+            / 100
+        )
+
+    discount = min(
+        discount,
+        total,
+    )
+
+    return (
+        coupon,
+        discount,
+        None,
+    )
+
+
+# ============================================================
+# SAVED ADDRESSES
+# ============================================================
+
+@login_required(login_url="store:login")
+def addresses(request):
+
+    user_addresses = (
+        Address.objects
+        .filter(user=request.user)
+        .order_by(
+            "-is_default",
+            "-created_at",
+        )
+    )
+
+    return render(
+        request,
+        "store/addresses.html",
+        {
+            "addresses": user_addresses,
+        },
+    )
+
+
+# ============================================================
+# ADD NEW ADDRESS
+# ============================================================
+
+@login_required(login_url="store:login")
+def add_address(request):
+
+    if request.method == "POST":
+
+        form = AddressForm(request.POST)
+
+        if form.is_valid():
+
+            address = form.save(
+                commit=False
+            )
+
+            address.user = request.user
+
+            # First address automatically becomes default.
+            if not Address.objects.filter(
+                user=request.user
+            ).exists():
+
+                address.is_default = True
+
+            address.save()
+
+            messages.success(
+                request,
+                "Address added successfully.",
+            )
+
+            return redirect(
+                "store:addresses"
+            )
+
+    else:
+
+        form = AddressForm()
+
+    return render(
+        request,
+        "store/address_form.html",
+        {
+            "form": form,
+            "title": "Add New Address",
+        },
+    )
+
+
+# ============================================================
+# EDIT ADDRESS
+# ============================================================
+
+@login_required(login_url="store:login")
+def edit_address(
+    request,
+    address_id,
+):
+
+    address = get_object_or_404(
+        Address,
+        id=address_id,
+        user=request.user,
+    )
+
+    if request.method == "POST":
+
+        form = AddressForm(
+            request.POST,
+            instance=address,
+        )
+
+        if form.is_valid():
+
+            form.save()
+
+            messages.success(
+                request,
+                "Address updated successfully.",
+            )
+
+            return redirect(
+                "store:addresses"
+            )
+
+    else:
+
+        form = AddressForm(
+            instance=address
+        )
+
+    return render(
+        request,
+        "store/address_form.html",
+        {
+            "form": form,
+            "title": "Edit Address",
+            "address": address,
+        },
+    )
+
+
+# ============================================================
+# DELETE ADDRESS
+# ============================================================
+
+@login_required(login_url="store:login")
+def delete_address(
+    request,
+    address_id,
+):
+
+    address = get_object_or_404(
+        Address,
+        id=address_id,
+        user=request.user,
+    )
+
+    if request.method != "POST":
+
+        return HttpResponseBadRequest(
+            "Use the Delete button."
+        )
+
+    was_default = address.is_default
+
+    address.delete()
+
+    # If default address was deleted,
+    # automatically select another address.
+    if was_default:
+
+        new_default = (
+            Address.objects
+            .filter(user=request.user)
+            .order_by("-created_at")
+            .first()
+        )
+
+        if new_default:
+
+            new_default.is_default = True
+
+            new_default.save(
+                update_fields=[
+                    "is_default"
+                ]
+            )
+
+    messages.success(
+        request,
+        "Address deleted successfully.",
+    )
+
     return redirect(
-        "store:cart"
+        "store:addresses"
+    )
+
+
+# ============================================================
+# SET DEFAULT ADDRESS
+# ============================================================
+
+@login_required(login_url="store:login")
+def set_default_address(
+    request,
+    address_id,
+):
+
+    if request.method != "POST":
+
+        return HttpResponseBadRequest(
+            "Use the Set Default button."
+        )
+
+    address = get_object_or_404(
+        Address,
+        id=address_id,
+        user=request.user,
+    )
+
+    # Remove default from every address.
+    Address.objects.filter(
+        user=request.user
+    ).update(
+        is_default=False
+    )
+
+    # Set selected address as default.
+    address.is_default = True
+
+    address.save(
+        update_fields=[
+            "is_default"
+        ]
+    )
+
+    messages.success(
+        request,
+        "Default address changed successfully.",
+    )
+
+    return redirect(
+        "store:addresses"
     )
 
 
@@ -325,544 +761,521 @@ def update_cart(request, product_id):
 @login_required(login_url="store:login")
 def checkout(request):
 
-    items = _cart_items(
-        request
-    )
+    items = _cart_items(request)
 
-    total = cart_total(
-        items
-    )
+    total = cart_total(items)
 
     discount = 0
     final_total = total
     coupon = None
 
-    # ========================================================
+    payment_settings = get_payment_settings()
+
+    # --------------------------------------------------------
     # EMPTY CART
-    # ========================================================
+    # --------------------------------------------------------
 
     if not items:
 
         messages.warning(
             request,
-            "Your cart is empty."
+            "Your cart is empty.",
         )
 
         return redirect(
             "store:home"
         )
 
-    # ========================================================
+    # --------------------------------------------------------
+    # DEFAULT SAVED ADDRESS
+    # --------------------------------------------------------
+
+    default_address = (
+        Address.objects
+        .filter(
+            user=request.user,
+            is_default=True,
+        )
+        .first()
+    )
+
+    # --------------------------------------------------------
     # POST
-    # ========================================================
+    # --------------------------------------------------------
 
     if request.method == "POST":
 
         # ====================================================
-        # COUPON CODE
+        # ADDRESS SELECTION
+        # ====================================================
+
+        selected_address_id = request.POST.get(
+            "address_id",
+            "",
+        ).strip()
+
+        selected_address = None
+
+        if selected_address_id:
+
+            try:
+
+                selected_address = Address.objects.get(
+                    id=selected_address_id,
+                    user=request.user,
+                )
+
+            except (
+                Address.DoesNotExist,
+                ValueError,
+            ):
+
+                selected_address = None
+
+        # ====================================================
+        # COUPON
         # ====================================================
 
         coupon_code = request.POST.get(
             "coupon_code",
-            ""
+            "",
         ).strip().upper()
 
         if coupon_code:
 
-            try:
+            (
+                coupon,
+                discount,
+                coupon_error,
+            ) = calculate_coupon_discount(
+                coupon_code,
+                total,
+            )
 
-                coupon = Coupon.objects.get(
-                    code__iexact=coupon_code
-                )
-
-                today = timezone.localdate()
-
-                # =================================================
-                # CHECK 1 - ACTIVE
-                # =================================================
-
-                if not coupon.is_active:
-
-                    messages.warning(
-                        request,
-                        "This coupon is inactive. "
-                        "Your order will continue without a discount."
-                    )
-
-                    coupon = None
-
-                # =================================================
-                # CHECK 2 - START DATE
-                # =================================================
-
-                elif today < coupon.start_date:
-
-                    messages.warning(
-                        request,
-                        "This coupon is not active yet. "
-                        "Your order will continue without a discount."
-                    )
-
-                    coupon = None
-
-                # =================================================
-                # CHECK 3 - END DATE
-                # =================================================
-
-                elif today > coupon.end_date:
-
-                    messages.warning(
-                        request,
-                        "This coupon has expired. "
-                        "Your order will continue without a discount."
-                    )
-
-                    coupon = None
-
-                # =================================================
-                # CHECK 4 - MAXIMUM USES
-                # =================================================
-
-                elif (
-                    coupon.max_uses > 0
-                    and coupon.used_count >= coupon.max_uses
-                ):
-
-                    messages.warning(
-                        request,
-                        "This coupon has reached its usage limit. "
-                        "Your order will continue without a discount."
-                    )
-
-                    coupon = None
-
-                # =================================================
-                # CHECK 5 - MINIMUM ORDER
-                # =================================================
-
-                elif (
-                    total < coupon.minimum_order_amount
-                ):
-
-                    messages.warning(
-                        request,
-                        f"This coupon requires a minimum order "
-                        f"of ₹{coupon.minimum_order_amount}. "
-                        "Your order will continue without a discount."
-                    )
-
-                    coupon = None
-
-                # =================================================
-                # CHECK 6 - DISCOUNT TYPE
-                # =================================================
-
-                else:
-
-                    if coupon.discount_type == "flat":
-
-                        discount = coupon.discount_value
-
-                    elif coupon.discount_type == "percentage":
-
-                        discount = (
-                            total
-                            * coupon.discount_value
-                            / 100
-                        )
-
-                    else:
-
-                        discount = 0
-
-                    # Discount can never be greater
-                    # than the order total.
-
-                    discount = min(
-                        discount,
-                        total
-                    )
-
-                    messages.success(
-                        request,
-                        f"Coupon '{coupon.code}' "
-                        f"applied successfully!"
-                    )
-
-            except Coupon.DoesNotExist:
-
-                # IMPORTANT:
-                # Invalid coupon NEVER blocks the order.
+            if coupon_error:
 
                 messages.warning(
                     request,
-                    "Invalid coupon code. "
-                    "Your order will continue without a discount."
+                    coupon_error,
                 )
 
                 coupon = None
+                discount = 0
+
+            else:
+
+                messages.success(
+                    request,
+                    f"Coupon '{coupon.code}' "
+                    f"applied successfully!",
+                )
 
         # ====================================================
-        # FINAL TOTAL
+        # TOTAL
         # ====================================================
 
         final_total = max(
             total - discount,
-            0
+            0,
         )
 
         # ====================================================
         # CUSTOMER DETAILS
         # ====================================================
 
-        full_name = request.POST.get(
-            "full_name",
-            ""
-        ).strip()
+        if selected_address:
+
+            full_name = selected_address.full_name
+            phone = selected_address.phone
+
+            address = selected_address.house_no
+
+            if selected_address.street:
+
+                address += (
+                    ", "
+                    + selected_address.street
+                )
+
+            if selected_address.landmark:
+
+                address += (
+                    ", "
+                    + selected_address.landmark
+                )
+
+            city = selected_address.city
+
+            postal_code = selected_address.pincode
+
+        else:
+
+            full_name = request.POST.get(
+                "full_name",
+                "",
+            ).strip()
+
+            phone = request.POST.get(
+                "phone",
+                "",
+            ).strip()
+
+            address = request.POST.get(
+                "address",
+                "",
+            ).strip()
+
+            city = request.POST.get(
+                "city",
+                "",
+            ).strip()
+
+            postal_code = request.POST.get(
+                "postal_code",
+                "",
+            ).strip()
 
         email = request.POST.get(
             "email",
-            ""
-        ).strip()
-
-        phone = request.POST.get(
-            "phone",
-            ""
-        ).strip()
-
-        address = request.POST.get(
-            "address",
-            ""
-        ).strip()
-
-        city = request.POST.get(
-            "city",
-            ""
-        ).strip()
-
-        postal_code = request.POST.get(
-            "postal_code",
-            ""
+            "",
         ).strip()
 
         # ====================================================
-        # BASIC VALIDATION
+        # PAYMENT
         # ====================================================
+
+        payment_method = request.POST.get(
+            "payment_method",
+            "",
+        ).strip().lower()
+
+        utr_number = request.POST.get(
+            "utr_number",
+            "",
+        ).strip()
+
+        # ====================================================
+        # VALIDATION
+        # ====================================================
+
+        error = None
 
         if not full_name:
 
-            messages.error(
-                request,
-                "Please enter your full name."
+            error = (
+                "Please select or enter your name."
             )
 
-            return render(
-                request,
-                "store/checkout.html",
-                {
-                    "items": items,
-                    "total": total,
-                    "discount": discount,
-                    "final_total": final_total,
-                    "coupon": coupon,
-                    "user": request.user,
-                }
-            )
+        elif not email:
 
-        if not email:
-
-            messages.error(
-                request,
+            error = (
                 "Please enter your email."
             )
 
-            return render(
-                request,
-                "store/checkout.html",
-                {
-                    "items": items,
-                    "total": total,
-                    "discount": discount,
-                    "final_total": final_total,
-                    "coupon": coupon,
-                    "user": request.user,
-                }
+        elif not phone:
+
+            error = (
+                "Please select or enter your phone number."
             )
 
-        if not phone:
+        elif not address:
+
+            error = (
+                "Please select or enter your address."
+            )
+
+        elif not city:
+
+            error = (
+                "Please select or enter your village/town."
+            )
+
+        elif not postal_code:
+
+            error = (
+                "Please enter your PIN code."
+            )
+
+        elif payment_method not in (
+            "upi",
+            "cod",
+        ):
+
+            error = (
+                "Please select a valid payment method."
+            )
+
+        elif (
+            payment_method == "upi"
+            and not payment_settings.upi_enabled
+        ):
+
+            error = (
+                "UPI payment is currently unavailable."
+            )
+
+        elif (
+            payment_method == "cod"
+            and not payment_settings.cod_enabled
+        ):
+
+            error = (
+                "Cash on Delivery is currently unavailable."
+            )
+
+        elif (
+            payment_method == "upi"
+            and not utr_number
+        ):
+
+            error = (
+                "Please enter the UTR number "
+                "after making the UPI payment."
+            )
+
+        # ====================================================
+        # SHOW ERROR
+        # ====================================================
+
+        if error:
 
             messages.error(
                 request,
-                "Please enter your phone number."
-            )
-
-            return render(
-                request,
-                "store/checkout.html",
-                {
-                    "items": items,
-                    "total": total,
-                    "discount": discount,
-                    "final_total": final_total,
-                    "coupon": coupon,
-                    "user": request.user,
-                }
-            )
-
-        if not address:
-
-            messages.error(
-                request,
-                "Please enter your address."
-            )
-
-            return render(
-                request,
-                "store/checkout.html",
-                {
-                    "items": items,
-                    "total": total,
-                    "discount": discount,
-                    "final_total": final_total,
-                    "coupon": coupon,
-                    "user": request.user,
-                }
-            )
-
-        if not city:
-
-            messages.error(
-                request,
-                "Please enter your city."
-            )
-
-            return render(
-                request,
-                "store/checkout.html",
-                {
-                    "items": items,
-                    "total": total,
-                    "discount": discount,
-                    "final_total": final_total,
-                    "coupon": coupon,
-                    "user": request.user,
-                }
-            )
-
-        if not postal_code:
-
-            messages.error(
-                request,
-                "Please enter your postal code."
-            )
-
-            return render(
-                request,
-                "store/checkout.html",
-                {
-                    "items": items,
-                    "total": total,
-                    "discount": discount,
-                    "final_total": final_total,
-                    "coupon": coupon,
-                    "user": request.user,
-                }
+                error,
             )
 
         # ====================================================
         # CREATE ORDER
         # ====================================================
 
-        try:
+        else:
 
-            with transaction.atomic():
+            try:
 
-                order = Order.objects.create(
+                with transaction.atomic():
 
-                    user=request.user,
+                    # ----------------------------------------
+                    # PAYMENT STATUS
+                    # ----------------------------------------
 
-                    full_name=full_name,
+                    payment_status = "pending"
 
-                    email=email,
+                    # ----------------------------------------
+                    # CREATE ORDER
+                    # ----------------------------------------
 
-                    phone=phone,
+                    order = Order.objects.create(
 
-                    address=address,
+                        user=request.user,
 
-                    city=city,
+                        full_name=full_name,
 
-                    postal_code=postal_code,
+                        email=email,
 
-                    total_amount=final_total,
+                        phone=phone,
 
-                )
+                        address=address,
 
-                # =================================================
-                # SAVE CUSTOMER ADDRESS
-                # =================================================
+                        city=city,
 
-                Address.objects.update_or_create(
+                        postal_code=postal_code,
 
-                    user=request.user,
+                        total_amount=final_total,
 
-                    is_default=True,
+                        payment_method=payment_method,
 
-                    defaults={
+                        payment_status=payment_status,
 
-                        "full_name": full_name,
+                        utr_number=(
+                            utr_number
+                            if payment_method == "upi"
+                            else ""
+                        ),
 
-                        "phone": phone,
+                        status="pending",
+                    )
 
-                        "house_no": address,
+                    # ----------------------------------------
+                    # SAVE ADDRESS
+                    # ----------------------------------------
 
-                        "street": "",
+                    if selected_address:
 
-                        "landmark": "",
+                        # The selected address already exists.
+                        pass
 
-                        "city": city,
+                    else:
 
-                        "district": city,
+                        # Save manually entered address
+                        # as the user's default address.
 
-                        "state": "Andhra Pradesh",
-
-                        "pincode": postal_code,
-
-                    },
-
-                )
-
-                # =================================================
-                # SAVE ORDER ITEMS
-                # =================================================
-
-                for item in items:
-
-                    product = item["product"]
-
-                    quantity = item["quantity"]
-
-                    # ---------------------------------------------
-                    # STOCK SAFETY
-                    # ---------------------------------------------
-
-                    if product.stock < quantity:
-
-                        raise ValueError(
-                            f"Not enough stock for {product.name}."
+                        Address.objects.filter(
+                            user=request.user
+                        ).update(
+                            is_default=False
                         )
 
-                    # ---------------------------------------------
-                    # CREATE ORDER ITEM
-                    # ---------------------------------------------
+                        Address.objects.create(
 
-                    OrderItem.objects.create(
+                            user=request.user,
 
-                        order=order,
+                            full_name=full_name,
 
-                        product=product,
+                            phone=phone,
 
-                        product_name=product.name,
+                            house_no=address,
 
-                        price=product.price,
+                            street="",
 
-                        quantity=quantity,
+                            landmark="",
 
-                    )
+                            city=city,
 
-                    # ---------------------------------------------
-                    # REDUCE STOCK
-                    # ---------------------------------------------
+                            district=city,
 
-                    product.stock -= quantity
+                            state="Andhra Pradesh",
 
-                    product.save(
-                        update_fields=[
-                            "stock"
-                        ]
-                    )
+                            pincode=postal_code,
 
-                # =================================================
-                # COUPON USAGE
-                # =================================================
+                            is_default=True,
+                        )
 
-                # Increase usage ONLY when coupon was valid
-                # and actually applied.
+                    # ----------------------------------------
+                    # ORDER ITEMS
+                    # ----------------------------------------
 
-                if coupon:
+                    for item in items:
 
-                    coupon.used_count += 1
+                        product = item["product"]
 
-                    coupon.save(
-                        update_fields=[
-                            "used_count"
-                        ]
-                    )
+                        quantity = item["quantity"]
 
-        except ValueError as error:
+                        if product.stock < quantity:
 
-            messages.error(
-                request,
-                str(error)
-            )
+                            raise ValueError(
+                                f"Not enough stock for "
+                                f"{product.name}."
+                            )
 
-            return render(
-                request,
-                "store/checkout.html",
-                {
-                    "items": items,
-                    "total": total,
-                    "discount": discount,
-                    "final_total": final_total,
-                    "coupon": coupon,
-                    "user": request.user,
-                }
-            )
+                        OrderItem.objects.create(
 
-        # ====================================================
-        # CLEAR CART
-        # ====================================================
+                            order=order,
 
-        request.session["cart"] = {}
+                            product=product,
 
-        request.session.modified = True
+                            product_name=product.name,
 
-        # ====================================================
-        # SEND EMAIL
-        # ====================================================
+                            price=product.price,
 
-        if (
-            settings.EMAIL_HOST_USER
-            and settings.EMAIL_HOST_PASSWORD
-        ):
+                            quantity=quantity,
+                        )
 
-            transaction.on_commit(
-                lambda: send_order_receipt(order)
-            )
+                        product.stock -= quantity
 
-        # ====================================================
-        # ORDER SUCCESS
-        # ====================================================
+                        product.save(
+                            update_fields=[
+                                "stock"
+                            ]
+                        )
 
-        return redirect(
-            "store:order_success",
-            order_id=order.id
+                    # ----------------------------------------
+                    # COUPON
+                    # ----------------------------------------
+
+                    if coupon:
+
+                        coupon.used_count += 1
+
+                        coupon.save(
+                            update_fields=[
+                                "used_count"
+                            ]
+                        )
+
+            except ValueError as error:
+
+                messages.error(
+                    request,
+                    str(error),
+                )
+
+            else:
+
+                # --------------------------------------------
+                # CLEAR CART
+                # --------------------------------------------
+
+                request.session["cart"] = {}
+
+                request.session.modified = True
+
+                messages.success(
+                    request,
+                    (
+                        f"Order #{order.id} has been placed and is "
+                        "pending payment verification."
+                    ),
+                )
+
+                return redirect("store:home")
+
+    # ========================================================
+    # CHECKOUT PAGE
+    # ========================================================
+
+    saved_addresses = (
+        Address.objects
+        .filter(user=request.user)
+        .order_by(
+            "-is_default",
+            "-created_at",
         )
-
-    # ========================================================
-    # GET REQUEST
-    # ========================================================
+    )
 
     return render(
         request,
         "store/checkout.html",
         {
             "items": items,
+
             "total": total,
+
             "discount": discount,
+
             "final_total": final_total,
+
             "coupon": coupon,
+
             "user": request.user,
-        }
+
+            "payment_settings":
+                payment_settings,
+
+            "upi_enabled":
+                payment_settings.upi_enabled,
+
+            "cod_enabled":
+                payment_settings.cod_enabled,
+
+            "upi_id":
+                payment_settings.upi_id,
+
+            "qr_code":
+                payment_settings.qr_code,
+
+            "payment_instructions":
+                payment_settings.payment_instructions,
+
+            # Saved address information
+            "addresses":
+                saved_addresses,
+
+            "saved_addresses":
+                saved_addresses,
+
+            "default_address":
+                default_address,
+        },
     )
 
 
@@ -871,21 +1284,86 @@ def checkout(request):
 # ============================================================
 
 @login_required(login_url="store:login")
-def order_success(request, order_id):
+def order_success(
+    request,
+    order_id,
+):
 
     order = get_object_or_404(
         Order,
         id=order_id,
-        user=request.user
+        user=request.user,
+    )
+
+    messages.info(
+        request,
+        f"Order #{order.id} is available in My Orders.",
+    )
+
+    return redirect("store:my_orders")
+
+
+# ============================================================
+# CUSTOMER ORDERS
+# ============================================================
+
+@login_required(login_url="store:login")
+def my_orders(request):
+
+    orders = (
+        Order.objects
+        .filter(user=request.user)
+        .prefetch_related("items")
+        .order_by("-created_at")
     )
 
     return render(
         request,
-        "store/order_success.html",
-        {
-            "order": order,
-        }
+        "store/my_orders.html",
+        {"orders": orders},
     )
+
+
+@login_required(login_url="store:login")
+def order_detail(request, order_id):
+
+    order = get_object_or_404(
+        Order.objects.prefetch_related("items"),
+        id=order_id,
+        user=request.user,
+    )
+
+    return render(
+        request,
+        "store/order_detail.html",
+        {"order": order},
+    )
+
+
+@login_required(login_url="store:login")
+def cancel_order(request, order_id):
+    """Allow a customer to cancel only their own pending order."""
+    if request.method != "POST":
+        return redirect("store:my_orders")
+
+    order = get_object_or_404(
+        Order.objects.prefetch_related("items"),
+        id=order_id,
+        user=request.user,
+    )
+
+    if order.cancel():
+        messages.success(
+            request,
+            f"Order #{order.id} has been cancelled. Any payment refund, if needed, will be handled by the shop.",
+        )
+    else:
+        messages.error(
+            request,
+            f"Order #{order.id} can no longer be cancelled because it is {order.get_status_display()}.",
+        )
+
+    return redirect("store:my_orders")
 
 
 # ============================================================
@@ -900,14 +1378,11 @@ def dashboard(request):
     today_orders = (
         Order.objects
         .filter(
-            created_at__date=today
+            user=request.user,
+            created_at__date=today,
         )
-        .prefetch_related(
-            "items"
-        )
-        .order_by(
-            "-created_at"
-        )
+        .prefetch_related("items")
+        .order_by("-created_at")
     )
 
     today_orders_count = today_orders.count()
@@ -915,10 +1390,9 @@ def dashboard(request):
     today_revenue = (
         today_orders
         .aggregate(
-            total=Sum(
-                "total_amount"
-            )
-        )["total"]
+            total=Sum("total_amount")
+        )
+        ["total"]
         or 0
     )
 
@@ -926,100 +1400,23 @@ def dashboard(request):
 
     total_customers = User.objects.count()
 
-    context = {
-
-        "today_orders_count":
-            today_orders_count,
-
-        "today_revenue":
-            today_revenue,
-
-        "total_products":
-            total_products,
-
-        "total_customers":
-            total_customers,
-
-        "today_orders":
-            today_orders,
-
-    }
-
     return render(
         request,
         "store/dashboard/dashboard.html",
-        context
-    )
+        {
+            "today_orders_count":
+                today_orders_count,
 
+            "today_revenue":
+                today_revenue,
 
-# ============================================================
-# MANAGEMENT LOGIN
-# ============================================================
+            "total_products":
+                total_products,
 
-def management_login(request):
+            "total_customers":
+                total_customers,
 
-    if (
-        request.user.is_authenticated
-        and request.user.is_staff
-    ):
-
-        return redirect(
-            "management:dashboard"
-        )
-
-    if request.method == "POST":
-
-        username = request.POST.get(
-            "username",
-            ""
-        ).strip()
-
-        password = request.POST.get(
-            "password",
-            ""
-        )
-
-        user = authenticate(
-            request,
-            username=username,
-            password=password
-        )
-
-        if (
-            user is not None
-            and user.is_staff
-        ):
-
-            login(
-                request,
-                user
-            )
-
-            return redirect(
-                "management:dashboard"
-            )
-
-        messages.error(
-            request,
-            "Invalid management username or password."
-        )
-
-    return render(
-        request,
-        "store/management/login.html"
-    )
-
-
-# ============================================================
-# MANAGEMENT LOGOUT
-# ============================================================
-
-def management_logout(request):
-
-    logout(
-        request
-    )
-
-    return redirect(
-        "management:login"
+            "today_orders":
+                today_orders,
+        },
     )

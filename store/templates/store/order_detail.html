@@ -1,0 +1,37 @@
+{% extends 'store/base.html' %}
+
+{% block title %}Order #{{ order.id }} | Kubera Kirana Shop{% endblock %}
+
+{% block content %}
+<main class="orders-page">
+    <section class="orders-card">
+        <p class="eyebrow">ORDER #{{ order.id }}</p>
+        <h1>Order details</h1>
+        <p>Your order is currently <strong>{{ order.get_status_display }}</strong>.</p>
+
+        <div class="order-details-grid">
+            <div>
+                <h2>Delivery address</h2>
+                <p>{{ order.full_name }}<br>{{ order.address }}<br>{{ order.city }} - {{ order.postal_code }}<br>{{ order.phone }}</p>
+            </div>
+            <div>
+                <h2>Order summary</h2>
+                {% for item in order.items.all %}
+                    <p>{{ item.product_name }} × {{ item.quantity }} — ₹{{ item.price|floatformat:2 }}</p>
+                {% endfor %}
+                <p><strong>Total: ₹{{ order.total_amount }}</strong></p>
+            </div>
+        </div>
+
+        <div class="order-detail-actions">
+            <a class="secondary-button" href="{% url 'store:my_orders' %}">Back to My Orders</a>
+            {% if order.status == "pending" %}
+                <form method="post" action="{% url 'store:cancel_order' order.id %}" onsubmit="return confirm('Are you sure you want to cancel Order #{{ order.id }}? This action cannot be undone.');">
+                    {% csrf_token %}
+                    <button class="danger-button" type="submit">Cancel order</button>
+                </form>
+            {% endif %}
+        </div>
+    </section>
+</main>
+{% endblock %}
