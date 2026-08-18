@@ -677,6 +677,12 @@
 
             <!-- PAYMENT SETTINGS (MANAGEMENT USERS ONLY) -->
 
+            {% if can_manage_employees %}
+                <a href="{% url 'management:employees' %}" class="payment-settings">
+                    Manage Employees
+                </a>
+            {% endif %}
+
             {% if request.user.is_staff %}
 
                 <a

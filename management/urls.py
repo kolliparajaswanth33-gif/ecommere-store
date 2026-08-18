@@ -34,6 +34,10 @@ urlpatterns = [
         name="dashboard"
     ),
 
+    path("employees/", views.employees, name="employees"),
+    path("employees/add/", views.add_employee, name="add_employee"),
+    path("employees/<int:employee_id>/edit/", views.edit_employee, name="edit_employee"),
+
     # ========================================================
     # PRODUCTS
     # ========================================================

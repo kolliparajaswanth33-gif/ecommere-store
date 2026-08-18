@@ -1,0 +1,24 @@
+{% extends "management/base_management.html" %}
+
+{% block title %}Employees{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <div><h1>Employee Management</h1><p>Manage employee accounts, roles, and employment details.</p></div>
+    <a class="button" href="{% url 'management:add_employee' %}">+ Add Employee</a>
+</div>
+<div class="table-wrap">
+<table>
+    <thead><tr><th>Employee</th><th>Employee ID</th><th>Role</th><th>Department</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for employee in employees %}
+        <tr>
+            <td>{% if employee.profile_photo %}<img class="avatar" src="{{ employee.profile_photo.url }}" alt="">{% endif %}<strong>{{ employee.full_name }}</strong><br><small>{{ employee.user.username }} · {{ employee.user.email }}</small></td>
+            <td>{{ employee.employee_id }}</td><td>{{ employee.get_role_display }}</td><td>{{ employee.department }}<br><small>{{ employee.designation }}</small></td>
+            <td>{% if employee.is_employed %}<span class="status active">Active</span>{% else %}<span class="status inactive">Inactive</span>{% endif %}</td>
+            <td><a class="button secondary" href="{% url 'management:edit_employee' employee.id %}">Edit</a></td>
+        </tr>
+    {% empty %}<tr><td colspan="6">No employees have been added yet.</td></tr>{% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

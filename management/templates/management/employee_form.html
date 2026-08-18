@@ -1,0 +1,20 @@
+{% extends "management/base_management.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-heading"><div><h1>{{ title }}</h1><p>Login credentials and employment information are kept together.</p></div><a class="button secondary" href="{% url 'management:employees' %}">Back to Employees</a></div>
+<form method="post" enctype="multipart/form-data" class="employee-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="errors">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-grid">
+    {% for field in form %}
+        <div class="field {% if field.name == 'address' %}wide{% endif %}">
+            {% if field.name == 'is_employed' %}{{ field }} <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {% else %}<label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>{{ field }}{% endif %}
+            {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{{ field.errors }}
+        </div>
+    {% endfor %}
+    </div>
+    <button class="button" type="submit">Save Employee</button>
+</form>
+{% endblock %}

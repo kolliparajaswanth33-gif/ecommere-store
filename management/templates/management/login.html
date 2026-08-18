@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -6,6 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Management Login | Kubera Kirana Shop</title>
+    <link rel="stylesheet" href="{% static 'store/css/password-toggle.css' %}">
+    <script src="{% static 'store/js/password-toggle.js' %}" defer></script>
 
     <style>
 
@@ -18,7 +21,7 @@
 
         body {
             min-height: 100vh;
-            background: #f3f4f6;
+            background: #739df3;
 
             display: flex;
             justify-content: center;

@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError, transaction
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -20,7 +21,9 @@ from .forms import (
     ProductForm,
     CouponForm,
     PaymentSettingsForm,
+    EmployeeForm,
 )
+from .models import EmployeeProfile
 
 
 User = get_user_model()
@@ -31,7 +34,38 @@ User = get_user_model()
 # ============================================================
 
 def has_management_access(user):
-    return user.is_authenticated and user.is_staff
+    if not user.is_authenticated or not user.is_staff or not user.is_active:
+        return False
+    # Existing Django superusers are Owners immediately after this upgrade,
+    # even before an optional profile is entered for them.
+    return user.is_superuser or hasattr(user, "employee_profile") or user.is_staff
+
+
+def is_owner(user):
+    return user.is_authenticated and user.is_superuser
+
+
+def can_manage_employees(user):
+    return is_owner(user) or (
+        has_management_access(user)
+        and user.employee_profile.role == EmployeeProfile.Role.MANAGER
+    )
+
+
+def can_manage_store(user):
+    """Only Owners and the single Manager have store-wide access.
+
+    Existing staff accounts without a profile retain their former access until
+    the Owner registers them as Employees, so this migration does not break an
+    already-running shop.
+    """
+    return is_owner(user) or (
+        has_management_access(user)
+        and (
+            not hasattr(user, "employee_profile")
+            or user.employee_profile.role == EmployeeProfile.Role.MANAGER
+        )
+    )
 
 
 # ============================================================
@@ -40,7 +74,7 @@ def has_management_access(user):
 
 def management_login(request):
 
-    if has_management_access(request.user):
+    if can_manage_store(request.user):
         return redirect("management:dashboard")
 
     if request.method == "POST":
@@ -70,7 +104,7 @@ def management_login(request):
                 password=password
             )
 
-            if user is not None and user.is_staff:
+            if user is not None and can_manage_store(user):
 
                 login(
                     request,
@@ -113,7 +147,7 @@ def management_logout(request):
 @login_required(login_url="management:login")
 def dashboard(request):
 
-    if not request.user.is_staff:
+    if not can_manage_store(request.user):
 
         messages.error(
             request,
@@ -164,6 +198,7 @@ def dashboard(request):
             "total_products": total_products,
             "total_customers": total_customers,
             "pending_orders_count": pending_orders_count,
+            "can_manage_employees": can_manage_employees(request.user),
         }
     )
 
@@ -175,7 +210,7 @@ def dashboard(request):
 @login_required(login_url="management:login")
 def products(request):
 
-    if not request.user.is_staff:
+    if not can_manage_store(request.user):
 
         messages.error(
             request,
@@ -208,7 +243,7 @@ def products(request):
 @login_required(login_url="management:login")
 def add_product(request):
 
-    if not request.user.is_staff:
+    if not can_manage_store(request.user):
 
         messages.error(
             request,
@@ -260,7 +295,7 @@ def add_product(request):
 @login_required(login_url="management:login")
 def edit_product(request, product_id):
 
-    if not request.user.is_staff:
+    if not can_manage_store(request.user):
 
         messages.error(
             request,
@@ -321,7 +356,7 @@ def edit_product(request, product_id):
 @login_required(login_url="management:login")
 def delete_product(request, product_id):
 
-    if not request.user.is_staff:
+    if not can_manage_store(request.user):
 
         messages.error(
             request,
@@ -360,7 +395,7 @@ def delete_product(request, product_id):
 @login_required(login_url="management:login")
 def orders(request):
 
-    if not request.user.is_staff:
+    if not can_manage_store(request.user):
 
         messages.error(
             request,
@@ -393,13 +428,69 @@ def orders(request):
 
 
 # ============================================================
+# EMPLOYEES
+# ============================================================
+
+@login_required(login_url="management:login")
+def employees(request):
+    if not can_manage_employees(request.user):
+        messages.error(request, "Only the Owner or Manager can manage employees.")
+        return redirect("management:dashboard")
+
+    profiles = EmployeeProfile.objects.select_related("user").all()
+    if not is_owner(request.user):
+        profiles = profiles.filter(role=EmployeeProfile.Role.STAFF)
+    return render(request, "management/employees.html", {"employees": profiles, "is_owner": is_owner(request.user)})
+
+
+@login_required(login_url="management:login")
+def add_employee(request):
+    if not can_manage_employees(request.user):
+        messages.error(request, "Only the Owner or Manager can add employees.")
+        return redirect("management:dashboard")
+    form = EmployeeForm(request.POST or None, request.FILES or None, actor=request.user)
+    if request.method == "POST" and form.is_valid():
+        try:
+            with transaction.atomic():
+                employee = form.save()
+        except IntegrityError:
+            form.add_error("role", "Only one Manager can exist.")
+        else:
+            messages.success(request, f"{employee.full_name} was added successfully.")
+            return redirect("management:employees")
+    return render(request, "management/employee_form.html", {"form": form, "title": "Add Employee"})
+
+
+@login_required(login_url="management:login")
+def edit_employee(request, employee_id):
+    if not can_manage_employees(request.user):
+        messages.error(request, "Only the Owner or Manager can manage employees.")
+        return redirect("management:dashboard")
+    employee = get_object_or_404(EmployeeProfile.objects.select_related("user"), pk=employee_id)
+    if not is_owner(request.user) and employee.role != EmployeeProfile.Role.STAFF:
+        messages.error(request, "Managers can only manage Staff accounts.")
+        return redirect("management:employees")
+    form = EmployeeForm(request.POST or None, request.FILES or None, instance=employee, actor=request.user)
+    if request.method == "POST" and form.is_valid():
+        try:
+            with transaction.atomic():
+                employee = form.save()
+        except IntegrityError:
+            form.add_error("role", "Only one Manager can exist.")
+        else:
+            messages.success(request, f"{employee.full_name} was updated successfully.")
+            return redirect("management:employees")
+    return render(request, "management/employee_form.html", {"form": form, "title": "Edit Employee", "employee": employee})
+
+
+# ============================================================
 # NEW ORDERS (PENDING ONLY)
 # ============================================================
 
 @login_required(login_url="management:login")
 def new_orders(request):
 
-    if not request.user.is_staff:
+    if not can_manage_store(request.user):
         messages.error(request, "You do not have management access.")
         return redirect("management:login")
 
@@ -442,7 +533,7 @@ DELIVERY_WORKLISTS = {
 @login_required(login_url="management:login")
 def orders_by_status(request, status):
 
-    if not request.user.is_staff:
+    if not can_manage_store(request.user):
         messages.error(request, "You do not have management access.")
         return redirect("management:login")
 
@@ -476,7 +567,7 @@ def orders_by_status(request, status):
 @login_required(login_url="management:login")
 def update_order_status(request, order_id):
 
-    if not request.user.is_staff:
+    if not can_manage_store(request.user):
 
         messages.error(
             request,
@@ -618,7 +709,7 @@ def update_order_status(request, order_id):
 @login_required(login_url="management:login")
 def coupons(request):
 
-    if not request.user.is_staff:
+    if not can_manage_store(request.user):
 
         messages.error(
             request,
@@ -651,7 +742,7 @@ def coupons(request):
 @login_required(login_url="management:login")
 def add_coupon(request):
 
-    if not request.user.is_staff:
+    if not can_manage_store(request.user):
 
         messages.error(
             request,
@@ -702,7 +793,7 @@ def add_coupon(request):
 @login_required(login_url="management:login")
 def edit_coupon(request, coupon_id):
 
-    if not request.user.is_staff:
+    if not can_manage_store(request.user):
 
         messages.error(
             request,
@@ -762,7 +853,7 @@ def edit_coupon(request, coupon_id):
 @login_required(login_url="management:login")
 def delete_coupon(request, coupon_id):
 
-    if not request.user.is_staff:
+    if not can_manage_store(request.user):
 
         messages.error(
             request,
@@ -801,7 +892,7 @@ def delete_coupon(request, coupon_id):
 @login_required(login_url="management:login")
 def payment_settings(request):
 
-    if not has_management_access(request.user):
+    if not can_manage_store(request.user):
 
         messages.error(
             request,

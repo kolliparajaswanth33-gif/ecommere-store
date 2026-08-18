@@ -1,0 +1,10 @@
+{% extends "admin/base.html" %}
+{% load static i18n %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'store/css/password-toggle.css' %}">
+<script src="{% static 'store/js/password-toggle.js' %}" defer></script>
+{% endblock %}
+
+{% block branding %}<h1 id="site-name"><a href="{% url 'admin:index' %}">{% translate 'Django administration' %}</a></h1>{% endblock %}
