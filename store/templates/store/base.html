@@ -1,49 +1,177 @@
 {% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Kubera Kirana Shop{% endblock %}</title>
+
+    <title>{% block title %}KuberaHub{% endblock %}</title>
+
+    <!-- Main CSS -->
     <link rel="stylesheet" href="{% static 'store/css/style.css' %}">
+
+    <!-- Password Toggle CSS -->
     <link rel="stylesheet" href="{% static 'store/css/password-toggle.css' %}">
+
+    <!-- Password Toggle JavaScript -->
     <script src="{% static 'store/js/password-toggle.js' %}" defer></script>
 </head>
+
 <body>
+
+    <!-- ============================= -->
+    <!-- HEADER -->
+    <!-- ============================= -->
+
     <header class="site-header">
-        <a class="brand" href="{% url 'store:home' %}">Kubera Kirana Shop</a>
+
+        <!-- KuberaHub Brand -->
+        <a class="brand" href="{% url 'store:home' %}">
+
+
+            <span class="brand-name">KuberaHub</span>
+
+        </a>
+
+
+        <!-- ============================= -->
+        <!-- NAVIGATION -->
+        <!-- ============================= -->
+
         <nav class="navigation">
-            <a href="{% url 'store:home' %}">Home</a>
-            <a href="#products">Products</a>
-            <a href="{% url 'store:cart' %}">Cart <span class="cart-count">{{ cart_count }}</span></a>
+
+            <a href="{% url 'store:home' %}">
+                Home
+            </a>
+
+            <a href="#products">
+                Products
+            </a>
+
+            <a href="{% url 'store:cart' %}">
+                Cart
+                <span class="cart-count">
+                    {{ cart_count }}
+                </span>
+            </a>
+
+
             {% if user.is_authenticated %}
-                <a href="{% url 'store:my_orders' %}">My Orders</a>
-                <span class="user-name">Hi, {{ user.username }}</span>
-                <form class="logout-form" method="post" action="{% url 'store:logout' %}">
+
+                <a href="{% url 'store:my_orders' %}">
+                    My Orders
+                </a>
+
+                <span class="user-name">
+                    Hi, {{ user.username }}
+                </span>
+
+                <form
+                    class="logout-form"
+                    method="post"
+                    action="{% url 'store:logout' %}"
+                >
+
                     {% csrf_token %}
-                    <button type="submit">Logout</button>
+
+                    <button type="submit">
+                        Logout
+                    </button>
+
                 </form>
+
             {% else %}
-                <a href="{% url 'store:login' %}">Login</a>
-                <a class="nav-register" href="{% url 'store:register' %}">Register</a>
+
+                <a href="{% url 'store:login' %}">
+                    Login
+                </a>
+
+                <a
+                    class="nav-register"
+                    href="{% url 'store:register' %}"
+                >
+                    Register
+                </a>
+
             {% endif %}
+
         </nav>
+
     </header>
 
+
+    <!-- ============================= -->
+    <!-- MESSAGES -->
+    <!-- ============================= -->
+
     {% if messages %}
-    <div class="messages-container">
-        {% for message in messages %}
-            <div class="alert {{ message.tags }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    </div>
+
+        <div class="messages-container">
+
+            {% for message in messages %}
+
+                <div class="alert {{ message.tags }}">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        </div>
+
     {% endif %}
 
-    {% block content %}{% endblock %}
+
+    <!-- ============================= -->
+    <!-- MAIN CONTENT -->
+    <!-- ============================= -->
+
+    <main>
+
+        {% block content %}
+
+        {% endblock %}
+
+    </main>
+
+
+    <!-- ============================= -->
+    <!-- FOOTER -->
+    <!-- ============================= -->
 
     <footer class="site-footer">
-        <p> This side Built by Kollipara Jaswanth.</p>
+
+        <div class="footer-brand">
+
+            <img
+                src="{% static 'images/logo.jpeg' %}"
+                alt="KuberaHub Logo"
+                class="footer-logo"
+            >
+
+            <div>
+                <h3>KuberaHub</h3>
+
+                <p>
+                    Your trusted online shopping destination.
+                </p>
+            </div>
+
+        </div>
+
+        <p class="footer-copy">
+            © 2026 KuberaHub. All rights reserved.
+        </p>
+
+        <p class="footer-developer">
+            Built by Kollipara Jaswanth.
+        </p>
+
     </footer>
+
+
 </body>
+
 </html>

@@ -1,0 +1,184 @@
+﻿[
+{
+  "model": "store.product",
+  "pk": 1,
+  "fields": {
+    "name": "Basmati Rice 1 kg",
+    "description": "Premium long-grain basmati rice for everyday meals.",
+    "price": "120.00",
+    "image": "products/basmati_rice.jpg",
+    "image_url": "",
+    "stock": 25,
+    "created_at": "2026-07-26T05:58:33.028Z"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 2,
+  "fields": {
+    "name": "Toor Dal 1 kg",
+    "description": "Fresh, protein-rich toor dal for your kitchen.",
+    "price": "165.00",
+    "image": "products/toor_dall.jpg",
+    "image_url": "",
+    "stock": 18,
+    "created_at": "2026-07-26T05:58:33.037Z"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 3,
+  "fields": {
+    "name": "Sunflower Oil 1 L",
+    "description": "Light cooking oil, suitable for everyday use.",
+    "price": "145.00",
+    "image": "products/sunflower_oil.jpg",
+    "image_url": "",
+    "stock": 12,
+    "created_at": "2026-07-26T05:58:33.047Z"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 4,
+  "fields": {
+    "name": "Tata Salt 1 kg",
+    "description": "Iodised salt for your daily cooking needs.",
+    "price": "28.00",
+    "image": "products/salt.jpg",
+    "image_url": "",
+    "stock": 39,
+    "created_at": "2026-07-26T05:58:33.055Z"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 5,
+  "fields": {
+    "name": "Turmeric Powder 200 g",
+    "description": "Fresh aromatic turmeric powder for curries and dals.",
+    "price": "55.00",
+    "image": "products/turmeric_powder.jpg",
+    "image_url": "",
+    "stock": 30,
+    "created_at": "2026-07-26T08:01:14.168Z"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 6,
+  "fields": {
+    "name": "Red Chilli Powder 200 g",
+    "description": "Spicy red chilli powder to add flavour to every dish.",
+    "price": "65.00",
+    "image": "products/redchilli_powder.jpg",
+    "image_url": "",
+    "stock": 21,
+    "created_at": "2026-07-26T08:01:14.173Z"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 7,
+  "fields": {
+    "name": "Sugar 1 kg",
+    "description": "Fine white sugar for tea, coffee, and sweets.",
+    "price": "48.00",
+    "image": "products/sugar.jpg",
+    "image_url": "",
+    "stock": 35,
+    "created_at": "2026-07-26T08:01:14.180Z"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 8,
+  "fields": {
+    "name": "Tata Tea 250 g",
+    "description": "Strong and refreshing tea for your daily chai.",
+    "price": "110.00",
+    "image": "products/tata_tea.jpg",
+    "image_url": "",
+    "stock": 20,
+    "created_at": "2026-07-26T08:01:14.187Z"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 9,
+  "fields": {
+    "name": "Marie Gold Biscuits",
+    "description": "Light and crunchy tea-time biscuits.",
+    "price": "35.00",
+    "image": "products/marie_gold.jpg",
+    "image_url": "",
+    "stock": 49,
+    "created_at": "2026-07-26T08:01:14.193Z"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 10,
+  "fields": {
+    "name": "Bath Soap Pack of 3",
+    "description": "Gentle everyday bathing soap for your family.",
+    "price": "95.00",
+    "image": "products/soaps.jpg",
+    "image_url": "",
+    "stock": 16,
+    "created_at": "2026-07-26T08:01:14.200Z"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 11,
+  "fields": {
+    "name": "Detergent Powder 1 kg",
+    "description": "Powerful detergent powder for clean clothes.",
+    "price": "105.00",
+    "image": "products/detergent.jpg",
+    "image_url": "",
+    "stock": 8,
+    "created_at": "2026-07-26T08:01:14.206Z"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 12,
+  "fields": {
+    "name": "Peanuts 500 g",
+    "description": "Fresh roasted peanuts for snacking and cooking.",
+    "price": "75.00",
+    "image": "products/peanuts.jpg",
+    "image_url": "",
+    "stock": 28,
+    "created_at": "2026-07-26T08:01:14.212Z"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 13,
+  "fields": {
+    "name": "badam",
+    "description": "Variety: California badam is most common and affordable, whereas Mamra and Kashmiri badam are rare, natural, and expensive\r\nQuality/Size: Bold and extra-large jumbo sizes cost more than regular or split broken pieces.",
+    "price": "750.00",
+    "image": "products/badam.jpg",
+    "image_url": "",
+    "stock": 10,
+    "created_at": "2026-07-26T10:35:26.164Z"
+  }
+},
+{
+  "model": "store.product",
+  "pk": 14,
+  "fields": {
+    "name": "Honey",
+    "description": "a sweet, thick liquid made by bees using flower nectar. Bees collect the nectar, break down its natural sugars, and store it in wax honeycombs inside their hives. People use honey as a food sweetener, a natural cough remedy, and an ointment for minor skin wounds.",
+    "price": "50.00",
+    "image": "products/honey.jpg",
+    "image_url": "",
+    "stock": 2,
+    "created_at": "2026-08-08T10:19:24.144Z"
+  }
+}
+]

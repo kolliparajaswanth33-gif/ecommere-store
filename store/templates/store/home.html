@@ -1,6 +1,6 @@
 {% extends 'store/base.html' %}
 
-{% block title %}Home | Kubera Kirana Shop{% endblock %}
+{% block title %}Home | KuberaHub{% endblock %}
 
 {% block content %}
 
@@ -10,8 +10,9 @@
          HERO SECTION
     ========================== -->
 
-    <section class="hero">
+<section class="hero">
 
+    <div class="hero-content">
         <p class="eyebrow">WELCOME TO OUR STORE</p>
 
         <h1>Your everyday essentials, in one place.</h1>
@@ -23,9 +24,9 @@
         <a class="primary-button" href="#products">
             Shop products
         </a>
+    </div>
 
-    </section>
-
+</section>
 
     <!-- =========================
          PRODUCTS SECTION
@@ -36,9 +37,15 @@
         <div class="section-heading">
 
             <div>
-                <p class="eyebrow">OUR COLLECTION</p>
 
-                <h2>Latest products</h2>
+                <p class="eyebrow">
+                    OUR COLLECTION
+                </p>
+
+                <h2>
+                    Latest products
+                </h2>
+
             </div>
 
             <span>
@@ -58,7 +65,6 @@
             {% for product in products %}
 
                 <article class="product-card">
-
 
                     <!-- PRODUCT IMAGE -->
 
@@ -98,7 +104,6 @@
 
                     <div class="product-content">
 
-
                         <!-- PRODUCT NAME -->
 
                         <h3>
@@ -126,7 +131,6 @@
                             <strong>
                                 ₹{{ product.price }}
                             </strong>
-
 
                             {% if product.stock > 0 %}
 
@@ -177,11 +181,9 @@
 
                         {% endif %}
 
-
                     </div>
 
                 </article>
-
 
             {% empty %}
 
